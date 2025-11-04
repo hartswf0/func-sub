@@ -2647,6 +2647,12 @@ Your context window contains: Both INNER and OUTER placements, all axis values, 
         cell.marker = null;
       }
       
+      // Remove label sprite
+      if (cell && cell.labelSprite) {
+        channel.scene.remove(cell.labelSprite);
+        cell.labelSprite = null;
+      }
+      
       // Clear cell data
       if (cell) {
         cell.entity = null;
@@ -2710,6 +2716,31 @@ Your context window contains: Both INNER and OUTER placements, all axis values, 
       marker.rotation.x = Math.PI;
       channel.scene.add(marker);
       cell.marker = marker;
+      
+      // Add TEXT LABEL above marker so users can see what it is!
+      const labelCanvas = document.createElement('canvas');
+      labelCanvas.width = 512;
+      labelCanvas.height = 128;
+      const labelCtx = labelCanvas.getContext('2d');
+      
+      // Draw label background
+      labelCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      labelCtx.fillRect(0, 0, 512, 128);
+      
+      // Draw label text
+      labelCtx.fillStyle = `#${(colors[type] || 0x56ff9f).toString(16).padStart(6, '0')}`;
+      labelCtx.font = 'bold 48px Courier New';
+      labelCtx.textAlign = 'center';
+      labelCtx.textBaseline = 'middle';
+      labelCtx.fillText(label, 256, 64);
+      
+      const labelTexture = new THREE.CanvasTexture(labelCanvas);
+      const labelMaterial = new THREE.SpriteMaterial({ map: labelTexture, transparent: true });
+      const labelSprite = new THREE.Sprite(labelMaterial);
+      labelSprite.position.set(cell.mesh.position.x, 3.5, cell.mesh.position.z); // Above marker
+      labelSprite.scale.set(4, 1, 1); // Wide and thin
+      channel.scene.add(labelSprite);
+      cell.labelSprite = labelSprite;
       
       if (!appState.gridEntities.has(channel.id)) {
         appState.gridEntities.set(channel.id, []);
@@ -5568,27 +5599,80 @@ Each train car represents a media era. When user chats with cars, respond as tha
           `Track: <strong>${TRACK_CONFIGS[track].label}</strong><br>Position: <strong>${Math.round(channel.trainProgress * 100)}%</strong><br>▶️ MOVING`;
       }
       
-      // Visual feedback - flash the grid cells (Three.js meshes)
+      // STRONG VISUAL FEEDBACK - Make tetrad controls FEEL POWERFUL
+      
+      // 1. Flash ALL grid cells with track color (more dramatic)
       if (channel.gridCells) {
-        channel.gridCells.forEach(cell => {
+        channel.gridCells.forEach((cell, i) => {
           if (cell && cell.material) {
             const originalColor = cell.material.color.getHex();
-            // TRACK_CONFIGS[track].color is already a hex number (0xff5c7c), not a string
-            cell.material.color.setHex(TRACK_CONFIGS[track].color);
+            // Stagger the flash for wave effect
             setTimeout(() => {
-              cell.material.color.setHex(originalColor);
-            }, 300);
+              cell.material.color.setHex(TRACK_CONFIGS[track].color);
+              setTimeout(() => {
+                cell.material.color.setHex(originalColor);
+              }, 400);
+            }, i * 15); // 15ms stagger creates wave
           }
         });
       }
       
-      // Update 3D track lines color
-      if (channel.trackLines) {
-        channel.trackLines.forEach(line => {
-          if (line.material) {
-            line.material.color.setHex(TRACK_CONFIGS[track].color);
+      // 2. Flash orbital rings with track color
+      if (channel.radarLines) {
+        channel.radarLines.forEach(radarLineObj => {
+          if (radarLineObj && radarLineObj.line && radarLineObj.line.material) {
+            const originalColor = radarLineObj.line.material.color.getHex();
+            radarLineObj.line.material.color.setHex(TRACK_CONFIGS[track].color);
+            radarLineObj.line.material.opacity = 1.0;
+            setTimeout(() => {
+              radarLineObj.line.material.color.setHex(originalColor);
+              radarLineObj.line.material.opacity = 0.3;
+            }, 600);
           }
         });
+      }
+      
+      // 3. Update active track visual indicator on grid
+      if (channel.scene) {
+        // Create/update mode label floating above grid center
+        if (!channel.modeLabel) {
+          const canvas = document.createElement('canvas');
+          canvas.width = 256;
+          canvas.height = 128;
+          const ctx = canvas.getContext('2d');
+          
+          const texture = new THREE.CanvasTexture(canvas);
+          const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
+          channel.modeLabel = new THREE.Sprite(spriteMaterial);
+          channel.modeLabel.position.set(0, 15, 0); // High above grid
+          channel.modeLabel.scale.set(8, 4, 1);
+          channel.scene.add(channel.modeLabel);
+        }
+        
+        // Update label text
+        const canvas = channel.modeLabel.material.map.image;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, 256, 128);
+        
+        // Draw mode name
+        ctx.fillStyle = `#${TRACK_CONFIGS[track].color.toString(16).padStart(6, '0')}`;
+        ctx.font = 'bold 48px Courier New';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(TRACK_CONFIGS[track].label, 128, 64);
+        
+        channel.modeLabel.material.map.needsUpdate = true;
+        
+        // Pulse animation
+        let pulseCount = 0;
+        const pulseInterval = setInterval(() => {
+          if (pulseCount >= 3) {
+            clearInterval(pulseInterval);
+            return;
+          }
+          channel.modeLabel.scale.set(8 + Math.sin(pulseCount) * 2, 4 + Math.sin(pulseCount) * 1, 1);
+          pulseCount += 0.5;
+        }, 100);
       }
       
       TestSuite.log('🚂', 'TRACK', `Switched to: ${track} (radius: ${newRadius}), AI prompt injected, visual feedback applied`);
