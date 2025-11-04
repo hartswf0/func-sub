@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHED Node Orbital Viewer</title>
+    <style>
+        /* BASE & GLOBAL STYLES (FROM NODE VIEWER, ADOPTED GLOBALLY) */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            /* Node Viewer theme variables - now global */
+            --bg: #0b0d10;
+            --panel: #11151aee;
+            --panel-dark: #0e1116aa;
+            --border: #2a323a;
+            --border-light: #3a4249;
+            --text: #e9e9e9;
+            --text-muted: #9aa3ad;
+            --accent: #ff4d2e;
+            --accent-soft: rgba(255, 77, 46, 0.12);
+            --accent-glow: rgba(255, 77, 46, 0.32);
+            --inner-color: #ff5c7c; /* Renamed from --inner to avoid conflict with panel.inner */
+            --outer-color: #569fff; /* Renamed from --outer */
+            --observer-color: #c78fff; /* Renamed from --observer */
+            --shed-phase-shed-color: var(--inner-color); /* For phase titles */
+            --shed-phase-integrate-color: var(--outer-color); /* For phase titles */
+            --shed-phase-ground-color: #56ff9f; /* For phase titles */
+
+            font-family: 'Courier New', monospace;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh; /* Ensures full viewport height */
+        }
+
+        /* SHED FRAMEWORK LAYOUT (ADAPTED TO NEW THEME) */
+        .frame {
+            display: grid;
+            grid-template-columns: 60px 1fr 60px; /* Left Alley | Content Area | Right Alley */
+            min-height: 100vh;
+            gap: 0;
+            background: var(--bg); /* Match body background */
+        }
+
+        .alley {
+            background: var(--panel-dark); /* Darker panel for alleys */
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+        }
+
+        .alley-left {
+            border-right: 3px solid var(--border); /* Thicker border for alleys */
+        }
+
+        .alley-right {
+            border-left: 3px solid var(--border); /* Thicker border for alleys */
+        }
+
+        .control-surface {
+            width: 44px;
+            height: 44px;
+            border: 3px solid var(--border);
+            background: var(--panel); /* Panel color */
+            color: var(--text); /* Text color */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 8px; /* Spacing between controls */
+            line-height: 1.1;
+            text-align: center;
+        }
+
+        .control-surface:hover {
+            background: var(--panel-dark); /* Darker on hover */
+            border-color: var(--accent); /* Accent border on hover */
+            color: var(--accent); /* Accent text on hover */
+        }
+
+        .control-surface.active {
+            background: var(--accent); /* Accent background when active */
+            color: var(--bg); /* Body background for contrast */
+            border-color: var(--accent);
+        }
+
+        .control-spacer {
+            flex: 1; /* Pushes controls to the top/bottom */
+        }
+
+        .content-area {
+            padding: 0; /* Node Viewer panels handle their own padding */
+            max-width: none; /* Let grid system handle width */
+            margin: 0 auto; /* No horizontal margin, vert handled by frame */
+            width: 100%;
+            display: flex; /* Flex container for axis-selector and node-viewer-container */
+            flex-direction: column;
+            overflow: hidden; /* Ensure no overflow */
+        }
+
+        /* SHED Axis Selector (at top of content-area) */
+        .axis-selector {
+            background: var(--panel);
+            border: 3px solid var(--border);
+            margin: 20px; /* Spacing around the selector */
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0; /* Don't let it shrink */
+        }
+
+        .axis-title {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            color: var(--text);
+        }
+
+        .axis-label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Fixed Corner Control (only for the Reset '≡' button) */
+        .corner-control {
+            position: fixed;
+            width: 44px;
+            height: 44px;
+            border: 3px solid var(--border);
+            background: var(--panel);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            z-index: 1000;
+            color: var(--text); /* Set color to match theme */
+        }
+
+        .corner-control:hover {
+            background: var(--panel-dark);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .corner-control.top-left { top: 8px; left: 8px; }
+
+        /* PHASES-CONTAINER (REMOVED - content moved to node cards) */
+        /* The SHED framework's phase cards are now integrated into Node Cards */
+        /* The following classes are effectively unused in the main content area */
+        .phases-container, .phase, .phase-header, .phase-title, .phase-subtitle,
+        .phase-content, .identity-column, .identity-text, .time-label,
+        .cards-grid, .card, .card-header, .card-title, .card-label, .card-main,
+        .card-detail, .bullet, .card-expanded-content, .input-area, .input-area textarea {
+            display: none !important; /* Force hide these elements */
+        }
+
+
+        /* NODE ORBITAL VIEWER STYLES (MODIFIED FOR INTEGRATION) */
+        .node-viewer-container { /* Renamed from .container to avoid conflict with top-level .container */
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr; /* Default 3-column layout */
+            gap: 0;
+            height: 100%; /* Take remaining height of content-area */
+            overflow: hidden; /* Prevent internal scrollbars if content is too large */
+            flex-grow: 1; /* Allow it to grow and fill available space */
+        }
+        
+        @media (min-width: 1200px) {
+            .node-viewer-container.side-by-side { /* Toggled by right alley button */
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        @media (max-width: 1200px) {
+            /* Default to single column on smaller screens, can be overridden by side-by-side */
+            .node-viewer-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+
+        .panel {
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+            overflow: hidden;
+            position: relative;
+            background: var(--panel); /* Use global panel variable */
+        }
+
+        .panel:last-child {
+            border-right: none;
+        }
+
+        .panel-header {
+            background: linear-gradient(180deg, var(--panel) 0%, var(--panel-dark) 100%);
+            padding: 16px;
+            border-bottom: 2px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .panel-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel.inner .panel-title { color: var(--inner-color); }
+        .panel.outer .panel-title { color: var(--outer-color); }
+        .panel.observer .panel-title { color: var(--observer-color); }
+
+        .panel-subtitle {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .orbital-viewport {
+            position: relative;
+            height: 300px;
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(2px 2px at 20px 30px, var(--border-light), transparent),
+                radial-gradient(2px 2px at 60px 70px, var(--border-light), transparent),
+                radial-gradient(1px 1px at 50px 50px, var(--border-light), transparent),
+                radial-gradient(1px 1px at 130px 80px, var(--border-light), transparent),
+                radial-gradient(2px 2px at 90px 10px, var(--border-light), transparent);
+            background-size: 200px 200px;
+            background-repeat: repeat;
+        }
+
+        .grid-canvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.8;
+        }
+
+        .radar-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 150px;
+            height: 150px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .node-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .node-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .node-list::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        .node-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .node-list::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        .node-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .node-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: currentColor; /* Uses the node's text color */
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .node-card:hover {
+            transform: translateY(-2px);
+            border-color: currentColor;
+            box-shadow: 0 8px 24px var(--accent-glow); /* Stronger glow from accent */
+        }
+
+        .node-card:hover::before {
+            opacity: 1;
+        }
+
+        .node-card.selected {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .node-card.inner { color: var(--inner-color); }
+        .node-card.outer { color: var(--outer-color); }
+        .node-card.synthetic { 
+            color: var(--text-muted); 
+            opacity: 0.7;
+        }
+
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .node-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text); /* Always white text for name */
+            margin-bottom: 4px;
+        }
+
+        .node-subtitle {
+            font-size: 11px;
+            color: currentColor; /* Uses node's specific color (inner/outer/synthetic) */
+            opacity: 0.8;
+        }
+
+        .node-coord {
+            background: var(--bg);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent);
+            border: 1px solid var(--border);
+        }
+
+        .node-meta {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .meta-tag {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: var(--panel-dark);
+            border: 1px solid var(--border);
+            color: var(--text-muted); /* Default muted */
+        }
+
+        .meta-tag.axis { 
+            color: #86efac; /* Specific color for axis tag */
+            border-color: #86efac44;
+        }
+
+        .phase-section {
+            margin-top: 8px;
+            padding: 8px;
+            background: var(--panel-dark);
+            border-radius: 4px;
+            display: block; /* Always visible in card by default, filtered by JS */
+            margin-bottom: 4px;
+        }
+        /* Hide phase section if explicitly filtered */
+        .phase-section.hidden {
+            display: none !important;
+        }
+
+
+        .phase-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .phase-title.shed { color: var(--shed-phase-shed-color); }
+        .phase-title.integrate { color: var(--shed-phase-integrate-color); }
+        .phase-title.ground { color: var(--shed-phase-ground-color); }
+
+        .phase-text {
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .stats-panel {
+            background: var(--panel-dark);
+            border-top: 1px solid var(--border);
+            padding: 12px 16px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 9px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        /* Node Viewer's internal filter bar - REMOVED, now using Alley Controls */
+        .filter-bar {
+            display: none;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--accent);
+            font-size: 14px;
+            font-weight: 700;
+            text-align: center;
+            z-index: 10; /* Ensure loading message is visible */
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+    </style>
+</head>
+<body>
+    <div class="corner-control top-left" onclick="resetAll()">≡</div>
+
+    <div class="frame">
+        <!-- LEFT ALLEY - AXIS CONTROLS -->
+        <div class="alley alley-left">
+            <div class="control-surface active" onclick="switchAxis('IDENTITY')" data-axis="IDENTITY">ID</div>
+            <div class="control-surface" onclick="switchAxis('EXPERIENCE')" data-axis="EXPERIENCE">EXP</div>
+            <div class="control-surface" onclick="switchAxis('LANGUAGE')" data-axis="LANGUAGE">LANG</div>
+            <div class="control-surface" onclick="switchAxis('DOMAIN')" data-axis="DOMAIN">DOM</div>
+            <div class="control-surface" onclick="switchAxis('PURPOSE')" data-axis="PURPOSE">PURP</div>
+            <div class="control-surface" onclick="switchAxis('ORDER')" data-axis="ORDER">ORD</div>
+            
+            <div class="control-spacer"></div> <!-- Pushes PREV/NEXT to bottom -->
+
+            <div class="control-surface" onclick="cycleAxis(-1)">PREV</div>
+            <div class="control-surface" onclick="cycleAxis(1)">NEXT</div>
+        </div>
+
+        <!-- MAIN CONTENT AREA - HOSTS NODE ORBITAL VIEWER -->
+        <div class="content-area">
+            <div class="axis-selector">
+                <div class="axis-title" id="currentAxisTitle">IDENTITY AXIS</div>
+                <div class="axis-label">INNER / OUTER</div>
+            </div>
+
+            <div class="node-viewer-container side-by-side" id="nodeViewerContainer">
+                <!-- INNER PANEL -->
+                <div class="panel inner">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            🔴 INNER
+                        </div>
+                        <div class="panel-subtitle">Subjective · Instinct · Seen · Ideas</div>
+                    </div>
+                    
+                    <div class="orbital-viewport">
+                        <canvas id="innerGrid" class="grid-canvas" width="280" height="280"></canvas>
+                        <div class="radar-overlay">
+                            <canvas id="innerRadar" width="150" height="150"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Bar REMOVED - using right alley controls -->
+                    
+                    <div class="node-list" id="innerNodes">
+                        <div class="loading">Loading nodes</div>
+                    </div>
+                    
+                    <div class="stats-panel">
+                        <div class="stat">
+                            <div class="stat-value" id="innerKnown">0</div>
+                            <div class="stat-label">Known</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="innerAxis">—</div>
+                            <div class="stat-label">Active Axis</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="innerBalance">0%</div>
+                            <div class="stat-label">Balance</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OBSERVER PANEL -->
+                <div class="panel observer">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            👁️ OBSERVER
+                        </div>
+                        <div class="panel-subtitle">Meta-Layer · Watches Both · Balance</div>
+                    </div>
+                    
+                    <div class="orbital-viewport">
+                        <canvas id="observerGrid" class="grid-canvas" width="280" height="280"></canvas>
+                        <div class="radar-overlay">
+                            <canvas id="observerRadar" width="150" height="150"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Bar REMOVED - using right alley controls -->
+                    
+                    <div class="node-list" id="observerNodes">
+                        <div class="loading">Loading nodes</div>
+                    </div>
+                    
+                    <div class="stats-panel">
+                        <div class="stat">
+                            <div class="stat-value" id="observerTotal">0</div>
+                            <div class="stat-label">Total</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="observerSynthetic">0</div>
+                            <div class="stat-label">Synthetic</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="observerImbalance">0</div>
+                            <div class="stat-label">Imbalance</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OUTER PANEL -->
+                <div class="panel outer">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            🔵 OUTER
+                        </div>
+                        <div class="panel-subtitle">Objective · Reason · Unseen · Ideology</div>
+                    </div>
+                    
+                    <div class="orbital-viewport">
+                        <canvas id="outerGrid" class="grid-canvas" width="280" height="280"></canvas>
+                        <div class="radar-overlay">
+                            <canvas id="outerRadar" width="150" height="150"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Bar REMOVED - using right alley controls -->
+                    
+                    <div class="node-list" id="outerNodes">
+                        <div class="loading">Loading nodes</div>
+                    </div>
+                    
+                    <div class="stats-panel">
+                        <div class="stat">
+                            <div class="stat-value" id="outerKnown">0</div>
+                            <div class="stat-label">Known</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="outerAxis">—</div>
+                            <div class="stat-label">Active Axis</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="outerBalance">0%</div>
+                            <div class="stat-label">Balance</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT ALLEY - INNER/OUTER & PHASE CONTROLS -->
+        <div class="alley alley-right">
+            <!-- Layout Toggle & Help Button - now integrated into the alley's flow -->
+            <div class="control-surface active" onclick="toggleLayout()">⊞</div> <!-- Active by default for side-by-side -->
+            <div class="control-surface" onclick="showHelp()">?</div>
+            
+            <div class="control-surface" onclick="filterType('INNER')" data-type="INNER">INNER</div>
+            <div class="control-surface" onclick="filterType('OUTER')" data-type="OUTER">OUTER</div>
+            <div class="control-surface active" onclick="filterType('ALL')" data-type="ALL">BOTH</div> <!-- BOTH active by default -->
+            
+            <div class="control-spacer"></div>
+            
+            <div class="control-surface active" onclick="filterPhase('shed')" data-phase="shed">SHED</div>
+            <div class="control-surface active" onclick="filterPhase('integrate')" data-phase="integrate">INT</div>
+            <div class="control-surface active" onclick="filterPhase('ground')" data-phase="ground">GRD</div>
+        </div>
+    </div>
+
+    <script>
+        // SHED FRAMEWORK - FLOW data (static)
+        const FLOW = {
+            IDENTITY: {
+                SHED: { INNER: 'Eliminate Current Emotional Noise', TGT_INNER: 'Noise In Immediate Preference',
+                       OUTER: 'Decommission Current Unused Formalisms', TGT_OUTER: 'Current Structural Excess' },
+                INTEGRATE: { INNER: 'Align Instinct to Conscious Goals', TGT_INNER: 'Directional Clarity',
+                            OUTER: 'Link Reason to External Feedback', TGT_OUTER: 'Environmental Input' },
+                GROUND: { INNER: 'Commit Core Value to Present Action', TGT_INNER: 'Stable Instinct',
+                         OUTER: 'Formalize Principle Into Present Use', TGT_OUTER: 'Structural Logic' }
+            },
+            EXPERIENCE: {
+                SHED: { INNER: 'Reduce Current Sensory Noise', TGT_INNER: 'Ephemeral Phenomena',
+                       OUTER: 'Reject Hidden Redundancy', TGT_OUTER: 'Non‑Essential Inferences' },
+                INTEGRATE: { INNER: 'Map Seen to Underlying Structure', TGT_INNER: 'Unseen Dynamics',
+                            OUTER: 'Verify Unseen to Current Seen Phenomena', TGT_OUTER: 'Real‑Time Evidence' },
+                GROUND: { INNER: 'Apply Observation Protocol to Present', TGT_INNER: 'Current Senses',
+                         OUTER: 'Standardize Inference Method', TGT_OUTER: 'Stable Inference' }
+            },
+            LANGUAGE: {
+                SHED: { INNER: 'Sharpen Units Of Current Meaning', TGT_INNER: 'Unnecessary Ideas',
+                       OUTER: 'Dismantle Current Group Ideology', TGT_OUTER: 'Obsolete Guiding System' },
+                INTEGRATE: { INNER: 'Synthesize Ideas to Coherent Patterns', TGT_INNER: 'Systematic Meaning',
+                            OUTER: 'Connect New Ideas to Guiding Narrative', TGT_OUTER: 'System Cohesion' },
+                GROUND: { INNER: 'Document Concept For Present Use', TGT_INNER: 'Fixed Vocabulary',
+                         OUTER: 'Formalize Narrative Into Shared Beliefs', TGT_OUTER: 'Current Shared Beliefs' }
+            },
+            DOMAIN: {
+                SHED: { INNER: 'Cultivate New Origin Points', TGT_INNER: 'Current Source Dependence',
+                       OUTER: 'Discard Unnecessary Action Assets', TGT_OUTER: 'Current Inventory Excess' },
+                INTEGRATE: { INNER: 'Establish Source to Resource Flow', TGT_INNER: 'Usable Assets',
+                            OUTER: 'Optimize Resource to Goal Vector', TGT_OUTER: 'Purposeful Action' },
+                GROUND: { INNER: 'Sustain Source For Present Use', TGT_INNER: 'Perpetual Origin',
+                         OUTER: 'Secure Asset Base For Present', TGT_OUTER: 'Fixed Assets' }
+            },
+            PURPOSE: {
+                SHED: { INNER: 'Purify Current Emotional Drive', TGT_INNER: 'Emotional Drive',
+                       OUTER: 'De‑Clutter Current Strategic Noise', TGT_OUTER: 'Strategic Noise' },
+                INTEGRATE: { INNER: 'Harmonize Heart to Head Clarity', TGT_INNER: 'Cognitive System',
+                            OUTER: 'Adjust Head to Heart Direction', TGT_OUTER: 'Emotional Alignment' },
+                GROUND: { INNER: 'Execute Chosen Goal With Full Commit', TGT_INNER: 'Affective Center',
+                         OUTER: 'Implement Strategy Into Formal Plan', TGT_OUTER: 'Cognitive Plan' }
+            },
+            ORDER: {
+                SHED: { INNER: 'Isolate Redundant Current Parts', TGT_INNER: 'Individual Components',
+                       OUTER: 'Restructure Current Systemic Arrangement', TGT_OUTER: 'Obsolete Structure' },
+                INTEGRATE: { INNER: 'Combine Parts to Coherent Whole', TGT_INNER: 'System Assembly',
+                            OUTER: 'Integrate Whole to New Patterns', TGT_OUTER: 'Constituent Parts' },
+                GROUND: { INNER: 'Stabilize Arrangement Into Fixed State', TGT_INNER: 'Fixed Components',
+                         OUTER: 'Institutionalize Order Into Function', TGT_OUTER: 'Functioning System' }
+            }
+        };
+
+        // GLOBAL STATE
+        let dataset = null; // Node Viewer data loaded from JSON
+        let selectedNode = null; // Currently selected node in the viewer
+        let currentAxis = 'IDENTITY'; // Active axis from left alley
+        let activePolarityFilter = 'ALL'; // Active type filter from right alley ('INNER', 'OUTER', 'ALL')
+        let activePhaseFilters = new Set(['shed', 'integrate', 'ground']); // Active phase filters from right alley
+        let isNodeViewerSideBySide = true; // Layout state for Node Viewer panels
+
+        // Array of axis keys for cycling
+        const AXES = Object.keys(FLOW); 
+        
+        // Radar axis values (Node Viewer)
+        const axisValues = {
+            inner: [0.3, 0.3, 0.3, 0.3, 0.3, 0.3], // Normalized values for each axis
+            outer: [0.3, 0.3, 0.3, 0.3, 0.3, 0.3]
+        };
+
+        // --- SHED FRAMEWORK CONTROL FUNCTIONS (ADAPTED) ---
+
+        function switchAxis(axis) {
+            currentAxis = axis;
+            document.getElementById('currentAxisTitle').textContent = axis + ' AXIS';
+            
+            // Update active state of axis buttons in left alley
+            document.querySelectorAll('.alley-left [data-axis]').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.alley-left [data-axis="${axis}"]`).classList.add('active');
+            
+            // Trigger Node Viewer updates based on new axis selection
+            renderAllPanels();
+            renderAllGrids();
+            renderAllRadars();
+            updateStats();
+        }
+
+        function cycleAxis(direction) {
+            let currentIndex = AXES.indexOf(currentAxis);
+            let nextIndex = (currentIndex + direction + AXES.length) % AXES.length;
+            switchAxis(AXES[nextIndex]);
+        }
+
+        function filterType(type) {
+            // Toggle activePolarityFilter
+            activePolarityFilter = activePolarityFilter === type ? 'ALL' : type; // Default to 'ALL' if toggling off
+            
+            // Update active state of type buttons in right alley
+            document.querySelectorAll('.alley-right [data-type]').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.alley-right [data-type="${activePolarityFilter}"]`).classList.add('active');
+            
+            // Re-render node lists to apply polarity filter
+            renderAllPanels();
+        }
+
+        function filterPhase(phase) {
+            // Toggle phase in activePhaseFilters set
+            if (activePhaseFilters.has(phase)) {
+                activePhaseFilters.delete(phase);
+            } else {
+                activePhaseFilters.add(phase);
+            }
+            
+            // If all phases are deselected, re-activate all (or none if that's desired)
+            if (activePhaseFilters.size === 0) {
+                activePhaseFilters.add('shed');
+                activePhaseFilters.add('integrate');
+                activePhaseFilters.add('ground');
+            }
+
+            // Update active state of phase buttons in right alley
+            document.querySelectorAll('.alley-right [data-phase]').forEach(btn => {
+                btn.classList.toggle('active', activePhaseFilters.has(btn.dataset.phase));
+            });
+            
+            // Re-render node lists to apply phase visibility within cards
+            renderAllPanels();
+        }
+
+        function toggleLayout() {
+            isNodeViewerSideBySide = !isNodeViewerSideBySide;
+            const container = document.getElementById('nodeViewerContainer');
+            if (container) {
+                container.classList.toggle('side-by-side', isNodeViewerSideBySide);
+                // Update active state of the layout toggle button
+                document.querySelector('.alley-right .control-surface[onclick="toggleLayout()"]').classList.toggle('active', isNodeViewerSideBySide);
+            }
+        }
+
+        function showHelp() {
+            alert("This application integrates the SHED Framework controls with an Orbital Node Viewer.\n\n" +
+                  "Left Alley (Axis Controls): Select an Axis (Identity, Experience, etc.) to filter nodes in the viewer and update radar charts.\n" +
+                  "  - Use PREV/NEXT to cycle through axes.\n\n" +
+                  "Right Alley (Node Filters):\n" +
+                  "  - INNER/OUTER/BOTH: Filter the node lists by polarity.\n" +
+                  "  - SHED/INT/GRD: Toggle visibility of phase details within node cards.\n" +
+                  "  - ⊞ button: Toggles the Node Viewer layout between 3-column and 1-column.\n" +
+                  "  - ? button: Displays this help message.\n\n" +
+                  "Main Area (Node Viewer): Displays Inner, Observer, and Outer node panels.\n" +
+                  "  - Click a node card to select it, highlight it on the grid, and update radar charts.\n" +
+                  "  - Selected node cards expand to show Shed, Integrate, and Ground details (subject to phase filters).");
+        }
+
+        function resetAll() {
+            // Reset SHED controls state
+            currentAxis = 'IDENTITY';
+            activePolarityFilter = 'ALL';
+            activePhaseFilters = new Set(['shed', 'integrate', 'ground']);
+            isNodeViewerSideBySide = true;
+
+            // Reset UI for SHED controls
+            document.querySelectorAll('.alley-left [data-axis]').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.alley-left [data-axis="IDENTITY"]`).classList.add('active');
+            document.getElementById('currentAxisTitle').textContent = 'IDENTITY AXIS';
+
+            document.querySelectorAll('.alley-right [data-type]').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.alley-right [data-type="ALL"]').classList.add('active'); // "BOTH" button
+
+            document.querySelectorAll('.alley-right [data-phase]').forEach(btn => btn.classList.add('active')); // All phases active
+
+            const layoutToggleButton = document.querySelector('.alley-right .control-surface[onclick="toggleLayout()"]');
+            if (layoutToggleButton) layoutToggleButton.classList.add('active'); // Layout toggle active by default
+
+            // Reset Node Viewer state
+            selectedNode = null;
+            const nodeViewerContainer = document.getElementById('nodeViewerContainer');
+            if (nodeViewerContainer) {
+                nodeViewerContainer.classList.add('side-by-side'); // Default to 3-column layout
+            }
+
+            // Re-initialize radar values to default (flat)
+            AXES.forEach((_, i) => {
+                axisValues.inner[i] = 0.3;
+                axisValues.outer[i] = 0.3;
+            });
+
+            // Re-render everything in Node Viewer
+            renderAllPanels();
+            renderAllGrids();
+            renderAllRadars();
+            updateStats();
+        }
+
+        // --- NODE ORBITAL VIEWER FUNCTIONS (ADAPTED) ---
+
+        // LOAD DATASET (retained from Node Viewer)
+        async function loadDataset() {
+            try {
+                const response = await fetch('complete_node_dataset.json'); // Ensure this file exists or mock it
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                dataset = await response.json();
+                console.log('✅ Dataset loaded:', dataset.known_nodes.length, 'nodes');
+                initializeViewer();
+            } catch (e) {
+                console.error('❌ Failed to load dataset:', e);
+                document.querySelectorAll('.loading').forEach(el => {
+                    el.textContent = '⚠️ Failed to load dataset';
+                });
+            }
+        }
+
+        function initializeViewer() {
+            // No internal filter rendering needed, SHED alleys handle it.
+            renderAllPanels();
+            renderAllGrids();
+            renderAllRadars();
+            updateStats();
+            // Set initial state for layout toggle button
+            document.querySelector('.alley-right .control-surface[onclick="toggleLayout()"]').classList.add('active');
+            document.querySelector('.alley-right [data-type="ALL"]').classList.add('active');
+            document.querySelectorAll('.alley-right [data-phase]').forEach(btn => btn.classList.add('active'));
+        }
+
+        function renderAllPanels() {
+            renderPanel('inner');
+            renderPanel('observer');
+            renderPanel('outer');
+        }
+
+        function renderPanel(panelType) {
+            let nodes = [];
+            
+            // Apply polarity filter
+            if (panelType === 'inner') {
+                nodes = dataset.known_nodes.filter(n => n.polarity === 'Inner');
+                if (activePolarityFilter === 'OUTER') nodes = [];
+            } else if (panelType === 'outer') {
+                nodes = dataset.known_nodes.filter(n => n.polarity === 'Outer');
+                if (activePolarityFilter === 'INNER') nodes = [];
+            } else { // Observer panel displays all known and some synthetic
+                nodes = [...dataset.known_nodes, ...dataset.synthetic_nodes.slice(0, 20)];
+                if (activePolarityFilter === 'INNER') nodes = nodes.filter(n => n.polarity === 'Inner' || n.id === undefined);
+                if (activePolarityFilter === 'OUTER') nodes = nodes.filter(n => n.polarity === 'Outer' || n.id === undefined);
+            }
+            
+            // Apply axis filter (from left alley)
+            if (currentAxis !== 'ALL' && currentAxis !== 'IDENTITY') {
+                 nodes = nodes.filter(n => 
+                    n.axis && n.axis.toUpperCase() === currentAxis
+                );
+            }
+            
+            const container = document.getElementById(`${panelType}Nodes`);
+            
+            if (nodes.length === 0) {
+                container.innerHTML = '<div class="loading">No nodes match current filters.</div>';
+                return;
+            }
+            
+            container.innerHTML = nodes.map(node => {
+                const isKnown = node.id !== undefined;
+                const polarityClass = isKnown ? node.polarity.toLowerCase() : 'synthetic';
+                
+                const isSelected = selectedNode && 
+                    selectedNode.coordinate[0] === node.coordinate[0] && 
+                    selectedNode.coordinate[1] === node.coordinate[1];
+                
+                // Determine phase section visibility based on activePhaseFilters
+                const shedHidden = !activePhaseFilters.has('shed') ? 'hidden' : '';
+                const integrateHidden = !activePhaseFilters.has('integrate') ? 'hidden' : '';
+                const groundHidden = !activePhaseFilters.has('ground') ? 'hidden' : '';
+
+                return `
+                    <div class="node-card ${polarityClass} ${isSelected ? 'selected' : ''}"
+                         data-row="${node.coordinate[0]}" 
+                         data-col="${node.coordinate[1]}"
+                         onclick="selectNode(${JSON.stringify(node).replace(/"/g, '&quot;')}, '${panelType}')">
+                        <div class="node-header">
+                            <div>
+                                <div class="node-name">${node.name}</div>
+                                <div class="node-subtitle">${isKnown ? node.subtitle : (node.nearest_node || 'Synthetic')}</div>
+                            </div>
+                            <div class="node-coord">(${node.coordinate[0]},${node.coordinate[1]})</div>
+                        </div>
+                        
+                        ${isKnown ? `
+                        <div class="node-meta">
+                            <span class="meta-tag axis">${node.axis}</span>
+                            <span class="meta-tag">${node.polarity}</span>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="phase-section ${shedHidden}">
+                            <div class="phase-title shed">🔴 SHED</div>
+                            <div class="phase-text">${node.shedding}</div>
+                        </div>
+                        
+                        <div class="phase-section ${integrateHidden}">
+                            <div class="phase-title integrate">⚪ INTEGRATE</div>
+                            <div class="phase-text">${node.integrating}</div>
+                        </div>
+                        
+                        <div class="phase-section ${groundHidden}">
+                            <div class="phase-title ground">🟢 GROUND</div>
+                            <div class="phase-text">${node.grounding}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.selectNode = function(node, panelType) {
+            selectedNode = node;
+            
+            renderAllPanels(); // Re-render all panels to update node selection highlights
+            
+            // Update radar axis values dynamically
+            const axisIndex = AXES.indexOf(currentAxis); // Use currentAxis from left alley
+            if (axisIndex !== -1) {
+                // Decay all values slightly
+                AXES.forEach((_, i) => {
+                    axisValues.inner[i] = Math.max(0.2, axisValues.inner[i] * 0.9);
+                    axisValues.outer[i] = Math.max(0.2, axisValues.outer[i] * 0.9);
+                });
+
+                // Boost the selected node's axis and polarity
+                const nodeAxisIndex = AXES.indexOf(node.axis.toUpperCase());
+                if (nodeAxisIndex !== -1) {
+                    if (node.polarity === 'Inner') {
+                        axisValues.inner[nodeAxisIndex] = 0.9;
+                    } else if (node.polarity === 'Outer') {
+                        axisValues.outer[nodeAxisIndex] = 0.9;
+                    }
+                }
+            }
+            
+            renderAllRadars();
+            renderAllGrids();
+            updateStats();
+            
+            console.log('🎯 Selected:', node.name, `(${node.coordinate[0]},${node.coordinate[1]})`);
+        };
+
+        // RENDER GRIDS (retained from Node Viewer, adjusted for colors)
+        function renderAllGrids() {
+            renderGrid('innerGrid', 'Inner', varToHex('--inner-color'));
+            renderGrid('outerGrid', 'Outer', varToHex('--outer-color'));
+            renderGrid('observerGrid', null, varToHex('--observer-color')); // Observer shows both polarities
+        }
+
+        function renderGrid(canvasId, polarity, defaultColor) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width; // Use canvas width/height
+            const cellSize = size / 9; // Grid is 9x9
+
+            ctx.clearRect(0, 0, size, size);
+            
+            // Draw grid lines
+            ctx.strokeStyle = 'rgba(42, 50, 58, 0.5)';
+            ctx.lineWidth = 1;
+            
+            for (let i = 0; i <= 9; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * cellSize, 0);
+                ctx.lineTo(i * cellSize, size);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(0, i * cellSize);
+                ctx.lineTo(size, i * cellSize);
+                ctx.stroke();
+            }
+            
+            // Draw nodes
+            const nodes = dataset.known_nodes.filter(n => 
+                !polarity || n.polarity === polarity
+            );
+            
+            nodes.forEach(node => {
+                const [row, col] = node.coordinate;
+                // Coordinates are 1-indexed, adjust for 0-indexed canvas and center of cell
+                const x = (col - 0.5) * cellSize; 
+                const y = (row - 0.5) * cellSize;
+                
+                const isSelected = selectedNode && 
+                    selectedNode.coordinate[0] === row && 
+                    selectedNode.coordinate[1] === col;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, isSelected ? 10 : 6, 0, Math.PI * 2);
+                ctx.fillStyle = node.polarity === 'Inner' ? varToHex('--inner-color') : varToHex('--outer-color');
+                ctx.fill();
+                
+                if (isSelected) {
+                    ctx.strokeStyle = varToHex('--accent');
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                }
+            });
+        }
+
+        // RENDER RADARS (retained from Node Viewer, adjusted for colors)
+        function renderAllRadars() {
+            renderRadar('innerRadar', axisValues.inner, varToHex('--inner-color'));
+            renderRadar('outerRadar', axisValues.outer, varToHex('--outer-color'));
+            
+            // Observer shows combined (average) values
+            const combined = axisValues.inner.map((v, i) => 
+                (v + axisValues.outer[i]) / 2
+            );
+            renderRadar('observerRadar', combined, varToHex('--observer-color'));
+        }
+
+        function renderRadar(canvasId, values, color) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 60;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid circles
+            ctx.strokeStyle = 'rgba(42, 50, 58, 0.3)';
+            ctx.lineWidth = 1;
+            [0.33, 0.66, 1].forEach(r => {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius * r, 0, Math.PI * 2);
+                ctx.stroke();
+            });
+            
+            // Draw axes (lines from center to edge)
+            ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2 - Math.PI / 2; // -PI/2 to start at top
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(
+                    centerX + Math.cos(angle) * radius,
+                    centerY + Math.sin(angle) * radius
+                );
+                ctx.stroke();
+            }
+            
+            // Draw data polygon
+            ctx.beginPath();
+            for (let i = 0; i <= 6; i++) {
+                const angle = (i / 6) * Math.PI * 2 - Math.PI / 2;
+                const value = values[i % 6]; // Values are 0-1 range
+                const x = centerX + Math.cos(angle) * radius * value;
+                const y = centerY + Math.sin(angle) * radius * value;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            
+            // Fill polygon with semi-transparent color
+            ctx.fillStyle = hexToRgba(color, 0.2);
+            ctx.fill();
+            
+            // Stroke polygon
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        // UPDATE STATS (retained from Node Viewer)
+        function updateStats() {
+            const innerNodes = dataset.known_nodes.filter(n => n.polarity === 'Inner');
+            const outerNodes = dataset.known_nodes.filter(n => n.polarity === 'Outer');
+            
+            document.getElementById('innerKnown').textContent = innerNodes.length;
+            document.getElementById('outerKnown').textContent = outerNodes.length;
+            document.getElementById('observerTotal').textContent = dataset.known_nodes.length;
+            document.getElementById('observerSynthetic').textContent = dataset.synthetic_nodes.length;
+            
+            // Active axis label
+            document.getElementById('innerAxis').textContent = currentAxis.substring(0, 3);
+            document.getElementById('outerAxis').textContent = currentAxis.substring(0, 3);
+            
+            // Balance calculation
+            const innerTotal = axisValues.inner.reduce((a, b) => a + b, 0);
+            const outerTotal = axisValues.outer.reduce((a, b) => a + b, 0);
+            const imbalance = Math.abs(innerTotal - outerTotal);
+            
+            document.getElementById('innerBalance').textContent = Math.round((innerTotal / AXES.length) * 100) + '%';
+            document.getElementById('outerBalance').textContent = Math.round((outerTotal / AXES.length) * 100) + '%';
+            document.getElementById('observerImbalance').textContent = imbalance.toFixed(1);
+        }
+
+        // Utility to convert CSS variable color to hex (for canvas)
+        function varToHex(cssVar) {
+            const tempDiv = document.createElement('div');
+            tempDiv.style.color = `var(${cssVar})`;
+            document.body.appendChild(tempDiv);
+            const color = getComputedStyle(tempDiv).color;
+            document.body.removeChild(tempDiv);
+            
+            // Convert rgb(r, g, b) to hex
+            const rgbMatch = color.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+            if (rgbMatch) {
+                const toHex = c => ('0' + parseInt(c).toString(16)).slice(-2);
+                return '#' + toHex(rgbMatch[1]) + toHex(rgbMatch[2]) + toHex(rgbMatch[3]);
+            }
+            return color; // Return as is if not RGB
+        }
+
+        // Utility to convert hex to rgba (for canvas fillStyle)
+        function hexToRgba(hex, alpha) {
+            let r = 0, g = 0, b = 0;
+            // Handle 3-digit hex
+            if (hex.length === 4) {
+                r = parseInt(hex[1] + hex[1], 16);
+                g = parseInt(hex[2] + hex[2], 16);
+                b = parseInt(hex[3] + hex[3], 16);
+            }
+            // Handle 6-digit hex
+            else if (hex.length === 7) {
+                r = parseInt(hex.substring(1, 3), 16);
+                g = parseInt(hex.substring(3, 5), 16);
+                b = parseInt(hex.substring(5, 7), 16);
+            }
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+
+        // --- INITIALIZATION ---
+        // Start by loading the Node Viewer dataset
+        loadDataset();
+    </script>
+</body>
+</html>

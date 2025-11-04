@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>THE TRAINING GROUNDS — Bauhaus Sheet</title>
+<meta name="color-scheme" content="light dark" />
+<style>
+  /* Bauhaus poster aesthetic: stark grid, rational spacing, print‑ready */
+  :root{
+    --paper:#f5f1e8;     /* warm off‑white */
+    --ink:#0e0e0e;       /* deep black */
+    --grid:#0e0e0e;      /* grid line */
+    --muted:#3e3e3e;     /* secondary */
+    --axis:120px;        /* axis column width */
+    --gap:14px;          /* spacing unit */
+    --border:3px;        /* stroke */
+    --cell-h:128px;      /* FIXED cell height for perfect row alignment */
+    --row-h: calc(var(--cell-h) * 2 + var(--border));
+    --head-h: 92px;      /* unified stage-head height */
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  }
+  *{ box-sizing:border-box }
+  html,body{ height:100% }
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font: 600 14px/1.3 var(--sans);
+    letter-spacing:.01em; font-kerning:normal; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+
+  .sheet{ max-width:1220px; margin:22px auto; padding:0 16px 32px; }
+  .frame{ border:var(--border) solid var(--grid); padding:18px; background:var(--paper) }
+
+  header{ position:relative; border-bottom:var(--border) solid var(--grid); padding:20px 8px 14px; text-align:center }
+  header h1{ margin:0; font:900 44px/1 var(--sans); letter-spacing:.12em; text-transform:uppercase; text-wrap:balance }
+  header h2{ margin:10px 0 0; font:800 16px/1 var(--sans); letter-spacing:.32em; text-transform:uppercase; color:var(--muted) }
+
+  /* Hamburger actions */
+  .hamburger{ position:absolute; top:10px; right:10px; width:36px; height:36px; border:var(--border) solid var(--grid); background:transparent; cursor:pointer; display:grid; place-items:center; font:900 18px/1 var(--sans); }
+  .menu{ position:absolute; top:52px; right:10px; background:var(--paper); border:var(--border) solid var(--grid); display:none; min-width:180px; z-index:2 }
+  .menu button{ width:100%; appearance:none; border:0; background:transparent; padding:10px 12px; text-align:left; font:800 12px/1 var(--sans); letter-spacing:.12em; text-transform:uppercase; border-bottom:var(--border) solid var(--grid) }
+  .menu button:last-child{ border-bottom:0 }
+
+  /* Three disciplined columns */
+  .columns{ display:grid; grid-template-columns: repeat(3, 1fr); gap:0; border-left:var(--border) solid var(--grid); border-right:var(--border) solid var(--grid); align-items:stretch }
+  .col{ border-right:var(--border) solid var(--grid); }
+  .col:last-child{ border-right:none }
+
+  /* Collapsible stages */
+  details.stage{ border-bottom:var(--border) solid var(--grid) }
+  summary.stage-head{ list-style:none; cursor:pointer; display:flex; flex-direction:column; justify-content:center; gap:6px; padding:16px 14px; border-bottom:0; height:var(--head-h) }
+  details[open] summary.stage-head{ background:rgba(0,0,0,.04) }
+  .stage-title{ font:900 26px/1 var(--sans); letter-spacing:.24em; text-transform:uppercase }
+  .stage-sub{ font:800 12px/1 var(--sans); letter-spacing:.12em; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+
+  /* Axis grid inside each column */
+  .matrix{ display:grid; grid-template-columns: var(--axis) 1fr; border-top:var(--border) solid var(--grid); border-bottom:var(--border) solid var(--grid); }
+  .row{ display:contents }
+  .axis{ writing-mode:vertical-rl; text-orientation:upright; text-align:center; border-right:var(--border) solid var(--grid); border-bottom:var(--border) solid var(--grid);
+         font:900 14px/1 var(--sans); letter-spacing:.34em; text-transform:uppercase; padding:8px; height:var(--row-h); display:flex; align-items:center; justify-content:center }
+  .cells{ border-bottom:var(--border) solid var(--grid); display:grid; grid-template-columns: 1fr; grid-template-rows: var(--cell-h) var(--cell-h); height:var(--row-h) }
+
+  .cell{ padding:16px 16px 12px; border-top:var(--border) solid var(--grid); overflow:hidden; display:grid; grid-template-rows:auto 1fr auto }
+  .cell:first-child{ border-top:none }
+  .cell h5{ margin:0 0 6px; font:900 12px/1 var(--sans); letter-spacing:.22em; text-transform:uppercase; white-space:nowrap }
+  .cell p{ margin:0; font:700 13px/1.28 var(--sans); max-width:46ch; hyphens:auto; overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3 }
+  .tgt{ margin-top:8px; color:var(--muted); font:700 11px/1.2 var(--mono); letter-spacing:.02em; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; min-height:calc(1.2em * 2); overflow:hidden; text-overflow:ellipsis; white-space:normal }
+
+  /* Compact at narrower widths */
+  @media (max-width: 980px){
+    :root{ --axis: auto; --cell-h: auto; --row-h: auto; --head-h: auto }
+    .columns{ grid-template-columns: 1fr; border-left:none; border-right:none }
+    .col{ border-right:none; border-left:none }
+    .axis{ writing-mode:horizontal-tb; transform:none; text-align:left; height:auto }
+    .matrix{ grid-template-columns: 1fr }
+    .cells{ grid-template-rows:none; height:auto }
+    .cell{ min-height:unset }
+  }
+
+  /* Print layout (poster) */
+  @media print{
+    body{ -webkit-print-color-adjust:exact; print-color-adjust:exact }
+    .hamburger, .menu{ display:none !important }
+    .sheet{ margin:0; padding:0 }
+  }
+</style>
+</head>
+<body>
+  <main class="sheet">
+    <div class="frame">
+      <header>
+        <h1>THE TRAINING GROUNDS</h1>
+        <h2>A FUNCTIONAL SUBSTRATE</h2>
+        <button class="hamburger" id="menuBtn" aria-label="menu">☰</button>
+        <div class="menu" id="menu">
+          <button id="mExpand">Expand All</button>
+          <button id="mCollapse">Collapse All</button>
+          <button onclick="window.print()">Print</button>
+        </div>
+      </header>
+
+      <section class="columns" id="columns"><!-- JS fills stages here --></section>
+    </div>
+  </main>
+
+<script>
+/* ===================== DATA ===================== */
+const FLOW = {
+  T0_PRESENT_CONTEXT_FLOW_VERTICAL: {
+    DESCRIPTION: 'Immediate, real‑time cycle.',
+    SHED_PURIFICATION_STAGE: {
+      IDENTITY_AXIS: { INNER:'/ID-IN-S: Eliminate Current Emotional Noise',           TGT_INNER:'Noise In Immediate Preference',
+                       OUTER:'/ID-OUT-S: Decomission Current Unused Formalisms',      TGT_OUTER:'Current Structural Excess' },
+      EXPERIENCE_AXIS:{ INNER:'/EXP-IN-S: Reduce Current Sensory Noise',               TGT_INNER:'Ephemeral Phenomena',
+                       OUTER:'/EXP-OUT-S: Reject Hidden Redundancy',                  TGT_OUTER:'Non‑Essential Inferences' },
+      LANGUAGE_AXIS:  { INNER:'/LANG-IN-S: Sharpen Units Of Current Meaning',          TGT_INNER:'Unnecessary Ideas',
+                       OUTER:'/LANG-OUT-S: Dismantle Current Group Ideology',         TGT_OUTER:'Obsolete Guiding System' },
+      DOMAIN_AXIS:    { INNER:'/DOM-IN-S: Cultivate New Origin Points',                TGT_INNER:'Current Source Dependence',
+                       OUTER:'/DOM-OUT-S: Discard Unnecessary Action Assets',         TGT_OUTER:'Current Inventory Excess' },
+      PURPOSE_AXIS:   { INNER:'/PURP-IN-S: Purify Current Emotional Drive',            TGT_INNER:'Emotional Drive',
+                       OUTER:'/PURP-OUT-S: De‑Clutter Current Strategic Noise',       TGT_OUTER:'Strategic Noise' },
+      ORDER_AXIS:     { INNER:'/ORD-IN-S: Isolate Redundant Current Parts',            TGT_INNER:'Individual Components',
+                       OUTER:'/ORD-OUT-S: Restructure Current Systemic Arrangement',  TGT_OUTER:'Obsolete Structure' }
+    },
+    INTEGRATE_SYNTHESIS_STAGE: {
+      IDENTITY_AXIS: { INNER:'/ID-IN-I: Align Instinct to Conscious Goals',            TGT_INNER:'Directional Clarity',
+                       OUTER:'/ID-OUT-I: Link Reason to External Feedback',           TGT_OUTER:'Environmental Input' },
+      EXPERIENCE_AXIS:{ INNER:'/EXP-IN-I: Map Seen to Underlying Structure',           TGT_INNER:'Unseen Dynamics',
+                       OUTER:'/EXP-OUT-I: Verify Unseen to Current Seen Phenomena',   TGT_OUTER:'Real‑Time Evidence' },
+      LANGUAGE_AXIS:  { INNER:'/LANG-IN-I: Synthesize Ideas to Coherent Patterns',     TGT_INNER:'Systematic Meaning',
+                       OUTER:'/LANG-OUT-I: Connect New Ideas to Guiding Narrative',    TGT_OUTER:'System Cohesion' },
+      DOMAIN_AXIS:    { INNER:'/DOM-IN-I: Establish Source to Resource Flow',          TGT_INNER:'Usable Assets',
+                       OUTER:'/DOM-OUT-I: Optimize Resource to Goal Vector',          TGT_OUTER:'Purposeful Action' },
+      PURPOSE_AXIS:   { INNER:'/PURP-IN-I: Harmonize Heart to Head Clarity',           TGT_INNER:'Cognitive System',
+                       OUTER:'/PURP-OUT-I: Adjust Head to Heart Direction',           TGT_OUTER:'Emotional Alignment' },
+      ORDER_AXIS:     { INNER:'/ORD-IN-I: Combine Parts to Coherent Whole',            TGT_INNER:'System Assembly',
+                       OUTER:'/ORD-OUT-I: Integrate Whole to New Patterns',           TGT_OUTER:'Constituent Parts' }
+    },
+    GROUND_COMMITMENT_STAGE: {
+      IDENTITY_AXIS: { INNER:'/ID-IN-G: Commit Core Value to Present Action',          TGT_INNER:'Stable Instinct',
+                       OUTER:'/ID-OUT-G: Formalize Principle Into Present Use',       TGT_OUTER:'Structural Logic' },
+      EXPERIENCE_AXIS:{ INNER:'/EXP-IN-G: Apply Observation Protocol to Present',       TGT_INNER:'Current Senses',
+                       OUTER:'/EXP-OUT-G: Standardize Inference Method',              TGT_OUTER:'Stable Inference' },
+      LANGUAGE_AXIS:  { INNER:'/LANG-IN-G: Document Concept For Present Use',          TGT_INNER:'Fixed Vocabulary',
+                       OUTER:'/LANG-OUT-G: Formalize Narrative Into Shared Beliefs',  TGT_OUTER:'Current Shared Beliefs' },
+      DOMAIN_AXIS:    { INNER:'/DOM-IN-G: Sustain Source For Present Use',             TGT_INNER:'Perpetual Origin',
+                       OUTER:'/DOM-OUT-G: Secure Asset Base For Present',             TGT_OUTER:'Fixed Assets' },
+      PURPOSE_AXIS:   { INNER:'/PURP-IN-G: Execute Chosen Goal With Full Commit',      TGT_INNER:'Affective Center',
+                       OUTER:'/PURP-OUT-G: Implement Strategy Into Formal Plan',      TGT_OUTER:'Cognitive Plan' },
+      ORDER_AXIS:     { INNER:'/ORD-IN-G: Stabilize Arrangement Into Fixed State',     TGT_INNER:'Fixed Components',
+                       OUTER:'/ORD-OUT-G: Institutionalize Order Into Function',      TGT_OUTER:'Functioning System' }
+    }
+  }
+};
+
+/* ================ RENDER ================ */
+const AXES = ['IDENTITY','EXPERIENCE','LANGUAGE','DOMAIN','PURPOSE','ORDER'];
+const PAIRS = {
+  IDENTITY:   { inner:'Instinct', outer:'Reason' },
+  EXPERIENCE: { inner:'Seen',     outer:'Unseen' },
+  LANGUAGE:   { inner:'Ideas',    outer:'Ideology' },
+  DOMAIN:     { inner:'Source',   outer:'Resource' },
+  PURPOSE:    { inner:'Heart',    outer:'Head' },
+  ORDER:      { inner:'Parts',    outer:'Whole' }
+};
+const STAGES = [
+  { key:'SHED_PURIFICATION_STAGE',    title:'SHED',      sub:'Remove excess · discard non‑essential' },
+  { key:'INTEGRATE_SYNTHESIS_STAGE',  title:'INTEGRATE', sub:'Connect parts into patterns' },
+  { key:'GROUND_COMMITMENT_STAGE',    title:'GROUND',    sub:'Stabilize patterns into order' }
+];
+
+const columns = document.getElementById('columns');
+
+function stripCode(t){
+  if(!t) return '';
+  if(t.charAt(0) === '/'){
+    const idx = t.indexOf(':');
+    if(idx > 0 && idx < 20){
+      return t.slice(idx+1).trim();
+    }
+  }
+  return t.trim();
+}
+
+function cellHTML(label, pair, text, tgt){
+  const cleaned = stripCode(text);
+  const tgtLine = tgt ? `<div class="tgt" aria-hidden="true">◎ ${tgt}</div>` : '';
+  const head = `${label} · ${pair.toUpperCase()}`;
+  return `<div class="cell"><h5>${head}</h5><p>${cleaned}</p>${tgtLine}</div>`;
+}
+
+function render(){
+  columns.innerHTML = '';
+  STAGES.forEach(({key,title,sub})=>{
+    const stage = FLOW.T0_PRESENT_CONTEXT_FLOW_VERTICAL[key];
+    const col = document.createElement('section');
+    col.className = 'col';
+
+    const det = document.createElement('details');
+    det.className = 'stage'; det.open = true;
+    det.innerHTML = `
+      <summary class="stage-head">
+        <div class="stage-title">${title}</div>
+        <div class="stage-sub">${sub}</div>
+      </summary>
+      <div class="matrix"></div>
+    `;
+
+    const grid = det.querySelector('.matrix');
+
+    AXES.forEach(axis=>{
+      const A = stage[axis+"_AXIS"];
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = `
+        <div class="axis">${axis}</div>
+        <div class="cells">
+          ${cellHTML('INNER', PAIRS[axis].inner, A.INNER, A.TGT_INNER)}
+          ${cellHTML('OUTER', PAIRS[axis].outer, A.OUTER, A.TGT_OUTER)}
+        </div>
+      `;
+      grid.appendChild(row);
+    });
+
+    col.appendChild(det);
+    columns.appendChild(col);
+  });
+}
+render();
+
+/* ================ INTERACTIONS (hamburger) ================ */
+const menuBtn = document.getElementById('menuBtn');
+const menu = document.getElementById('menu');
+const mExpand = document.getElementById('mExpand');
+const mCollapse = document.getElementById('mCollapse');
+
+menuBtn.addEventListener('click', ()=>{
+  const open = menu.style.display === 'block';
+  menu.style.display = open ? 'none' : 'block';
+});
+
+window.addEventListener('click', (e)=>{
+  if(!menu.contains(e.target) && e.target !== menuBtn){
+    menu.style.display = 'none';
+  }
+});
+
+mExpand.addEventListener('click', ()=>{
+  document.querySelectorAll('details.stage').forEach(d=>d.open=true);
+  menu.style.display = 'none';
+});
+
+mCollapse.addEventListener('click', ()=>{
+  document.querySelectorAll('details.stage').forEach(d=>d.open=false);
+  menu.style.display = 'none';
+});
+
+/* ===================== SELF‑TESTS =====================
+   Console tests to guard regressions without altering UI.
+*/
+(function selfTests(){
+  const tests = [];
+  const cols = [...document.querySelectorAll('.col')];
+  tests.push({name:'three columns', pass: cols.length === 3});
+  tests.push({name:'six axes per column', pass: cols.every(c => c.querySelectorAll('.row').length === 6)});
+  const firstHeader = document.querySelector('.cell h5')?.textContent || '';
+  tests.push({name:'pair labels present', pass: /INNER\s·\sINSTINCT/i.test(firstHeader)});
+  const tgtBlocks = document.querySelectorAll('.tgt');
+  tests.push({name:'targets exist', pass: tgtBlocks.length >= 12});
+
+  const summaries = [...document.querySelectorAll('summary.stage-head')];
+  const h0 = summaries[0]?.getBoundingClientRect().height || 0;
+  tests.push({name:'uniform summary heights', pass: summaries.every(s => Math.abs(s.getBoundingClientRect().height - h0) < 1)});
+
+  const results = tests.map(t => `${t.pass ? '✔' : '✘'} ${t.name}`);
+  console.group('%cTraining Grounds — self‑tests','font-weight:bold');
+  results.forEach(r => console.log(r));
+  console.groupEnd();
+})();
+</script>
+</body>
+</html>

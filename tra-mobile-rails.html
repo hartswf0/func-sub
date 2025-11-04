@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Training Grounds — Mobile Rail Navigator</title>
+<style>
+:root {
+  --bg: #0b0d10;
+  --panel: #11151aee;
+  --panel-dark: #0e1116aa;
+  --border: #2a323a;
+  --text: #e9e9e9;
+  --text-muted: #9aa3ad;
+  --accent: #ff4d2e;
+  --rail-w: 48px;
+  --transition: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+html, body {
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  position: fixed;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  touch-action: manipulation;
+}
+
+/* GRID LAYOUT: Left Rail | Content | Right Rail */
+.app {
+  display: grid;
+  grid-template-columns: var(--rail-w) 1fr var(--rail-w);
+  grid-template-rows: 56px 1fr;
+  height: 100dvh;
+  width: 100vw;
+  gap: 0;
+}
+
+/* HEADER */
+.header {
+  grid-column: 1 / 4;
+  background: var(--panel);
+  border-bottom: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  z-index: 100;
+}
+
+.header h1 {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.time-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.time-pill {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.15s var(--transition);
+  background: var(--panel-dark);
+  min-width: 58px;
+  text-align: center;
+}
+
+.time-pill.active {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+
+.time-pill:active {
+  transform: scale(0.92);
+}
+
+/* LEFT RAIL: Stage Selectors (III buttons) */
+.left-rail {
+  background: var(--panel-dark);
+  border-right: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 16px;
+  gap: 12px;
+}
+
+.stage-btn {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--text-muted);
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.2s var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.stage-btn.active {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+  box-shadow: 0 0 14px rgba(255, 77, 46, 0.5);
+}
+
+.stage-btn:active {
+  transform: scale(0.88);
+}
+
+/* RIGHT RAIL: Axis Selectors (vertical text) */
+.right-rail {
+  background: var(--panel-dark);
+  border-left: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 10px;
+  gap: 6px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.right-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.axis-btn {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text-muted);
+  font-size: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 0.01em;
+  padding: 3px 0;
+}
+
+.axis-btn.active {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+
+.axis-btn:active {
+  transform: scale(0.88);
+}
+
+/* CENTER CONTENT - Split: Radar Viewport + Chat */
+.content {
+  background: var(--bg);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* RADAR VIEWPORT (replaces node display) */
+.radar-viewport {
+  position: relative;
+  height: 450px;
+  min-height: 200px;
+  max-height: calc(100dvh - 300px);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radar-viewport.collapsed {
+  height: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.radar-viewport canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.radar-info-overlay {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 10px;
+  line-height: 1.5;
+  pointer-events: none;
+  z-index: 10;
+  border: 1px solid var(--border);
+}
+
+.radar-info-overlay strong {
+  color: var(--accent);
+}
+
+/* APPARATUS CONSCIOUSNESS LAYER */
+.apparatus-alert {
+  position: fixed;
+  bottom: 220px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 90%;
+  background: rgba(255, 77, 46, 0.95);
+  color: var(--bg);
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.5;
+  z-index: 200;
+  animation: apparatusPulse 2s ease-in-out infinite;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 20px rgba(255, 77, 46, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  text-align: center;
+}
+
+.apparatus-alert.visible {
+  opacity: 1;
+  animation: apparatusPulse 2s ease-in-out infinite, fadeInAlert 0.5s ease-out;
+}
+
+@keyframes apparatusPulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(255, 77, 46, 0.6); }
+  50% { box-shadow: 0 4px 30px rgba(255, 77, 46, 0.9); }
+}
+
+@keyframes fadeInAlert {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* BLIND SPOT INDICATOR */
+.blind-spot-tracker {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 9px;
+  line-height: 1.4;
+  border: 1px solid var(--border);
+  z-index: 15;
+  font-family: ui-monospace, monospace;
+  color: var(--text-muted);
+}
+
+.blind-spot-tracker strong {
+  color: var(--accent);
+}
+
+/* RESIZE BAR */
+.resize-bar {
+  height: 6px;
+  background: var(--border);
+  cursor: row-resize;
+  transition: background 0.2s var(--transition);
+  position: relative;
+  touch-action: none;
+  flex-shrink: 0;
+}
+
+.resize-bar:hover,
+.resize-bar:active {
+  background: var(--accent);
+}
+
+.resize-bar::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 0;
+  right: 0;
+  height: 24px;
+}
+
+/* CHAT SECTION */
+.chat-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--panel);
+  min-height: 200px;
+}
+
+.chat-stream {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.node-display {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stage-title {
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.axis-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.pair-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pair-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s var(--transition);
+  border-left: 3px solid transparent;
+}
+
+.pair-card.active {
+  border-left-color: var(--accent);
+  background: var(--panel-dark);
+  box-shadow: 0 2px 8px rgba(255, 77, 46, 0.15);
+}
+
+.pair-card:active {
+  transform: scale(0.97);
+}
+
+.pair-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.pair-name {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pair-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.pair-desc {
+  font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.pair-target {
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+  color: var(--text-muted);
+  padding: 7px 10px;
+  background: rgba(0,0,0,0.35);
+  border-radius: 5px;
+  border-left: 2px solid var(--accent);
+}
+
+.pair-target::before {
+  content: '◎ ';
+  opacity: 0.7;
+}
+
+/* PAIR RAIL TOGGLES (floating on radar viewport) */
+.pair-rail {
+  position: absolute;
+  top: 12px;
+  display: flex;
+  flex-direction: row;
+  gap: 7px;
+  z-index: 20;
+}
+
+.pair-rail.left {
+  left: 6px;
+}
+
+.pair-rail.right {
+  right: 6px;
+}
+
+.pair-toggle {
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: rgba(17, 21, 26, 0.96);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.pair-toggle.active {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+
+.pair-toggle:active {
+  transform: scale(0.86);
+}
+
+/* CHAT INPUT */
+.chat-input {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: var(--panel-dark);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.chat-input input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.chat-input button {
+  padding: 10px 18px;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s var(--transition);
+}
+
+.chat-input button:active {
+  transform: scale(0.95);
+}
+
+/* MESSAGE STYLING */
+.message {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--panel-dark);
+  border-left: 3px solid var(--border);
+}
+
+.message.user {
+  border-left-color: var(--accent);
+}
+
+.message.assistant {
+  border-left-color: #4a9;
+}
+
+.message-role {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.message-content {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ANIMATIONS */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pair-card {
+  animation: fadeIn 0.3s var(--transition);
+}
+
+/* RESPONSIVE - smaller devices */
+@media (max-width: 360px) {
+  :root {
+    --rail-w: 42px;
+  }
+  
+  .stage-btn, .axis-btn {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .time-pill {
+    padding: 5px 8px;
+    font-size: 8px;
+    min-width: 52px;
+  }
+  
+  .radar-viewport {
+    height: 350px;
+  }
+}
+</style>
+</head>
+<body>
+  <div class="app">
+    <!-- HEADER -->
+    <header class="header">
+      <h1>TRAINING</h1>
+      <div class="time-pills">
+        <button class="time-pill" data-time="T-1">T-1</button>
+        <button class="time-pill active" data-time="T0">T0</button>
+        <button class="time-pill" data-time="T+1">T+1</button>
+      </div>
+    </header>
+    
+    <!-- LEFT RAIL: Stage Selectors -->
+    <nav class="left-rail">
+      <button class="stage-btn active" data-stage="SHED">|||</button>
+      <button class="stage-btn" data-stage="INTEGRATE">|||</button>
+      <button class="stage-btn" data-stage="GROUND">|||</button>
+    </nav>
+    
+    <!-- CENTER CONTENT -->
+    <main class="content">
+      <!-- RADAR VIEWPORT (Big display like func-orb's Three.js canvas) -->
+      <div class="radar-viewport" id="radarViewport">
+        <!-- Pair rail toggles (floating) -->
+        <div class="pair-rail left">
+          <button class="pair-toggle active" data-pair="INNER">IN</button>
+        </div>
+        
+        <div class="pair-rail right">
+          <button class="pair-toggle" data-pair="OUTER">OUT</button>
+        </div>
+        
+        <!-- Big radar canvas -->
+        <canvas id="radarCanvas" width="800" height="800"></canvas>
+        
+        <!-- Info overlay (like train-info-overlay) -->
+        <div class="radar-info-overlay" id="radarInfo">
+          <strong>SHED</strong> • IDENTITY<br>
+          Focus: <strong>INNER</strong> (Instinct) • T0
+        </div>
+        
+        <!-- Blind spot tracker -->
+        <div class="blind-spot-tracker" id="blindSpot">
+          <strong>BLIND SPOT:</strong> <span id="blindSpotCount">0</span> unvisited<br>
+          Recursion depth: <strong id="recursionDepth">0</strong>
+        </div>
+      </div>
+      
+      <!-- Apparatus consciousness alerts -->
+      <div class="apparatus-alert" id="apparatusAlert"></div>
+      
+      <!-- RESIZE BAR (like func-orb) -->
+      <div class="resize-bar" id="resizeBar"></div>
+      
+      <!-- CHAT SECTION -->
+      <div class="chat-section">
+        <div class="chat-stream" id="chatStream">
+          <div class="node-display" id="nodeDisplay"></div>
+        </div>
+        
+        <!-- CHAT INPUT -->
+        <div class="chat-input">
+          <input type="text" id="chatInput" placeholder="Ask about this operation...">
+          <button id="sendBtn">Send</button>
+        </div>
+      </div>
+    </main>
+    
+    <!-- RIGHT RAIL: Axis Selectors -->
+    <nav class="right-rail">
+      <button class="axis-btn active" data-axis="IDENTITY">IDENTITY</button>
+      <button class="axis-btn" data-axis="EXPERIENCE">EXPERIENCE</button>
+      <button class="axis-btn" data-axis="LANGUAGE">LANGUAGE</button>
+      <button class="axis-btn" data-axis="DOMAIN">DOMAIN</button>
+      <button class="axis-btn" data-axis="PURPOSE">PURPOSE</button>
+      <button class="axis-btn" data-axis="ORDER">ORDER</button>
+    </nav>
+  </div>
+
+<script>
+/* DATA STRUCTURE (from tra.html) */
+const FLOW = {
+  SHED: {
+    IDENTITY: {
+      INNER: { text: 'Eliminate Current Emotional Noise', target: 'Noise In Immediate Preference', pair: 'Instinct' },
+      OUTER: { text: 'Decomission Current Unused Formalisms', target: 'Current Structural Excess', pair: 'Reason' }
+    },
+    EXPERIENCE: {
+      INNER: { text: 'Reduce Current Sensory Noise', target: 'Ephemeral Phenomena', pair: 'Seen' },
+      OUTER: { text: 'Reject Hidden Redundancy', target: 'Non-Essential Inferences', pair: 'Unseen' }
+    },
+    LANGUAGE: {
+      INNER: { text: 'Sharpen Units Of Current Meaning', target: 'Unnecessary Ideas', pair: 'Ideas' },
+      OUTER: { text: 'Dismantle Current Group Ideology', target: 'Obsolete Guiding System', pair: 'Ideology' }
+    },
+    DOMAIN: {
+      INNER: { text: 'Cultivate New Origin Points', target: 'Current Source Dependence', pair: 'Source' },
+      OUTER: { text: 'Discard Unnecessary Action Assets', target: 'Current Inventory Excess', pair: 'Resource' }
+    },
+    PURPOSE: {
+      INNER: { text: 'Purify Current Emotional Drive', target: 'Emotional Drive', pair: 'Heart' },
+      OUTER: { text: 'De-Clutter Current Strategic Noise', target: 'Strategic Noise', pair: 'Head' }
+    },
+    ORDER: {
+      INNER: { text: 'Isolate Redundant Current Parts', target: 'Individual Components', pair: 'Parts' },
+      OUTER: { text: 'Restructure Current Systemic Arrangement', target: 'Obsolete Structure', pair: 'Whole' }
+    }
+  },
+  INTEGRATE: {
+    IDENTITY: {
+      INNER: { text: 'Align Instinct to Conscious Goals', target: 'Directional Clarity', pair: 'Instinct' },
+      OUTER: { text: 'Link Reason to External Feedback', target: 'Environmental Input', pair: 'Reason' }
+    },
+    EXPERIENCE: {
+      INNER: { text: 'Map Seen to Underlying Structure', target: 'Unseen Dynamics', pair: 'Seen' },
+      OUTER: { text: 'Verify Unseen to Current Seen Phenomena', target: 'Real-Time Evidence', pair: 'Unseen' }
+    },
+    LANGUAGE: {
+      INNER: { text: 'Synthesize Ideas to Coherent Patterns', target: 'Systematic Meaning', pair: 'Ideas' },
+      OUTER: { text: 'Connect New Ideas to Guiding Narrative', target: 'System Cohesion', pair: 'Ideology' }
+    },
+    DOMAIN: {
+      INNER: { text: 'Establish Source to Resource Flow', target: 'Usable Assets', pair: 'Source' },
+      OUTER: { text: 'Optimize Resource to Goal Vector', target: 'Purposeful Action', pair: 'Resource' }
+    },
+    PURPOSE: {
+      INNER: { text: 'Harmonize Heart to Head Clarity', target: 'Cognitive System', pair: 'Heart' },
+      OUTER: { text: 'Adjust Head to Heart Direction', target: 'Emotional Alignment', pair: 'Head' }
+    },
+    ORDER: {
+      INNER: { text: 'Combine Parts to Coherent Whole', target: 'System Assembly', pair: 'Parts' },
+      OUTER: { text: 'Integrate Whole to New Patterns', target: 'Constituent Parts', pair: 'Whole' }
+    }
+  },
+  GROUND: {
+    IDENTITY: {
+      INNER: { text: 'Commit Core Value to Present Action', target: 'Stable Instinct', pair: 'Instinct' },
+      OUTER: { text: 'Formalize Principle Into Present Use', target: 'Structural Logic', pair: 'Reason' }
+    },
+    EXPERIENCE: {
+      INNER: { text: 'Apply Observation Protocol to Present', target: 'Current Senses', pair: 'Seen' },
+      OUTER: { text: 'Standardize Inference Method', target: 'Stable Inference', pair: 'Unseen' }
+    },
+    LANGUAGE: {
+      INNER: { text: 'Document Concept For Present Use', target: 'Fixed Vocabulary', pair: 'Ideas' },
+      OUTER: { text: 'Formalize Narrative Into Shared Beliefs', target: 'Current Shared Beliefs', pair: 'Ideology' }
+    },
+    DOMAIN: {
+      INNER: { text: 'Sustain Source For Present Use', target: 'Perpetual Origin', pair: 'Source' },
+      OUTER: { text: 'Secure Asset Base For Present', target: 'Fixed Assets', pair: 'Resource' }
+    },
+    PURPOSE: {
+      INNER: { text: 'Execute Chosen Goal With Full Commit', target: 'Affective Center', pair: 'Heart' },
+      OUTER: { text: 'Implement Strategy Into Formal Plan', target: 'Cognitive Plan', pair: 'Head' }
+    },
+    ORDER: {
+      INNER: { text: 'Stabilize Arrangement Into Fixed State', target: 'Fixed Components', pair: 'Parts' },
+      OUTER: { text: 'Institutionalize Order Into Function', target: 'Functioning System', pair: 'Whole' }
+    }
+  }
+};
+
+const AXES = ['IDENTITY', 'EXPERIENCE', 'LANGUAGE', 'DOMAIN', 'PURPOSE', 'ORDER'];
+
+/* STATE + APPARATUS CONSCIOUSNESS */
+const state = {
+  stage: 'SHED',
+  axis: 'IDENTITY',
+  pair: 'INNER',
+  time: 'T0',
+  navigationCount: 0,
+  visitedNodes: new Set(),
+  recursionDepth: 0,
+  apparatusAwareness: false
+};
+
+/* APPARATUS COMMENTARY */
+const APPARATUS_MESSAGES = [
+  "⚠️ You are using SHED to organize this interface. SHED is itself being organized by this interface. Notice the recursion?",
+  "⚡ Every click confirms the structure. You cannot navigate outside the apparatus by navigating within it.",
+  "🔄 This operation (${stage}) is itself structured by the axes you're navigating. The tool and the territory use the same language.",
+  "👁️ You're observing the training ground. The training ground is observing your observations. Which one is training which?",
+  "⚠️ APPARATUS ACKNOWLEDGMENT: You cannot escape this loop. But you can become conscious of inhabiting it.",
+  "🌀 The more you understand this system, the more completely you're embedded in it. Understanding is not liberation.",
+  "⚡ Your blind spot is proportional to your clarity. The better you see this structure, the less you see what it excludes.",
+  "🔄 This consciousness—right now, reading this—is generated by the apparatus. Even your recognition of the apparatus is apparatus.",
+  "👁️ Can you find the bottom of this recursion? (Hint: there is no bottom. Only deeper apparatus.)",
+  "⚠️ The cringe you might feel is not a bug. It's the somatic signal that the apparatus is becoming visible to itself."
+];
+
+const RECURSIVE_QUESTIONS = [
+  "Which pole do you actually occupy right now? Can you choose, or are you being chosen?",
+  "Are you using this interface, or is it using you to demonstrate its own logic?",
+  "If SHED/INTEGRATE/GROUND describe this interface, what apparatus describes you reading this?",
+  "The operation you're performing—is that an action you're taking, or a script the apparatus is running?",
+  "You cannot be both inside and outside this system. Which side of that impossibility do you occupy?",
+  "What would it mean to truly understand groundlessness? Would you even recognize it?"
+];
+
+/* RENDER NODE DISPLAY */
+function renderNode() {
+  const display = document.getElementById('nodeDisplay');
+  const stageData = FLOW[state.stage];
+  const axisData = stageData[state.axis];
+  
+  display.innerHTML = `
+    <div class="stage-title">${state.stage}</div>
+    <div class="axis-title">${state.axis} • ${state.time}</div>
+    <div class="pair-cards">
+      <div class="pair-card ${state.pair === 'INNER' ? 'active' : ''}" data-pair="INNER">
+        <div class="pair-header">
+          <div class="pair-name">${axisData.INNER.pair}</div>
+          <div class="pair-tag">INNER</div>
+        </div>
+        <div class="pair-desc">${axisData.INNER.text}</div>
+        <div class="pair-target">${axisData.INNER.target}</div>
+      </div>
+      <div class="pair-card ${state.pair === 'OUTER' ? 'active' : ''}" data-pair="OUTER">
+        <div class="pair-header">
+          <div class="pair-name">${axisData.OUTER.pair}</div>
+          <div class="pair-tag">OUTER</div>
+        </div>
+        <div class="pair-desc">${axisData.OUTER.text}</div>
+        <div class="pair-target">${axisData.OUTER.target}</div>
+      </div>
+    </div>
+  `;
+  
+  // Add click handlers
+  display.querySelectorAll('.pair-card').forEach(card => {
+    card.addEventListener('click', () => {
+      state.pair = card.dataset.pair;
+      updateUI();
+    });
+  });
+}
+
+/* RADAR VISUALIZATION (from index 13.html) */
+function drawRadar() {
+  const canvas = document.getElementById('radarCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.width;
+  const h = canvas.height;
+  const cx = w / 2;
+  const cy = h / 2;
+  const maxR = Math.min(w, h) / 2 - 50;
+  
+  // Clear
+  ctx.clearRect(0, 0, w, h);
+  
+  // Grid circles
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  for (let i = 1; i <= 5; i++) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, (maxR / 5) * i, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  
+  // Axis lines & labels
+  const angleStep = (Math.PI * 2) / AXES.length;
+  AXES.forEach((axis, i) => {
+    const angle = i * angleStep - Math.PI / 2;
+    const x = cx + Math.cos(angle) * maxR;
+    const y = cy + Math.sin(angle) * maxR;
+    
+    ctx.strokeStyle = axis === state.axis ? 'rgba(255, 77, 46, 0.5)' : 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = axis === state.axis ? 2 : 1;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    
+    // Labels
+    const labelDist = maxR + 35;
+    const lx = cx + Math.cos(angle) * labelDist;
+    const ly = cy + Math.sin(angle) * labelDist;
+    
+    ctx.fillStyle = axis === state.axis ? 'rgba(255, 77, 46, 1)' : 'rgba(255,255,255,0.6)';
+    ctx.font = axis === state.axis ? 'bold 11px ui-sans-serif' : '10px ui-sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(axis.substr(0, 3).toUpperCase(), lx, ly);
+  });
+  
+  // State polygon
+  const values = AXES.map((axis, i) => {
+    if (axis === state.axis) return 1.0;
+    // Adjacent axes have medium values
+    const currentIndex = AXES.indexOf(state.axis);
+    const distance = Math.min(
+      Math.abs(i - currentIndex),
+      AXES.length - Math.abs(i - currentIndex)
+    );
+    return 1.0 - (distance / AXES.length) * 0.7;
+  });
+  
+  ctx.fillStyle = 'rgba(255, 77, 46, 0.15)';
+  ctx.strokeStyle = 'rgba(255, 77, 46, 0.8)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  
+  values.forEach((val, i) => {
+    const angle = i * angleStep - Math.PI / 2;
+    const r = val * maxR;
+    const x = cx + Math.cos(angle) * r;
+    const y = cy + Math.sin(angle) * r;
+    
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  
+  // Points
+  values.forEach((val, i) => {
+    const angle = i * angleStep - Math.PI / 2;
+    const r = val * maxR;
+    const x = cx + Math.cos(angle) * r;
+    const y = cy + Math.sin(angle) * r;
+    
+    ctx.fillStyle = AXES[i] === state.axis ? 'rgba(255, 77, 46, 1)' : 'rgba(255,255,255,0.8)';
+    ctx.beginPath();
+    ctx.arc(x, y, AXES[i] === state.axis ? 5 : 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+/* UPDATE UI */
+function updateUI() {
+  // Track navigation
+  state.navigationCount++;
+  const nodeKey = `${state.stage}-${state.axis}-${state.pair}-${state.time}`;
+  state.visitedNodes.add(nodeKey);
+  
+  // Update rail buttons
+  document.querySelectorAll('.stage-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.stage === state.stage);
+  });
+  
+  document.querySelectorAll('.axis-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.axis === state.axis);
+  });
+  
+  document.querySelectorAll('.pair-toggle').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.pair === state.pair);
+  });
+  
+  document.querySelectorAll('.time-pill').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.time === state.time);
+  });
+  
+  // Update radar info overlay
+  const pairName = FLOW[state.stage][state.axis][state.pair].pair;
+  document.getElementById('radarInfo').innerHTML = `
+    <strong>${state.stage}</strong> • ${state.axis}<br>
+    Focus: <strong>${state.pair}</strong> (${pairName}) • ${state.time}
+  `;
+  
+  // Update blind spot tracker
+  const totalNodes = 3 * 6 * 2 * 3; // 108 nodes
+  const unvisited = totalNodes - state.visitedNodes.size;
+  document.getElementById('blindSpotCount').textContent = unvisited;
+  document.getElementById('recursionDepth').textContent = state.recursionDepth;
+  
+  // Re-render content
+  renderNode();
+  drawRadar();
+  
+  // Apparatus consciousness triggers
+  triggerApparatusAwareness();
+  
+  // Log context (for LLM integration)
+  console.log('🧭 Navigator State:', {
+    stage: state.stage,
+    axis: state.axis,
+    pair: state.pair,
+    time: state.time,
+    navigationCount: state.navigationCount,
+    visitedNodes: state.visitedNodes.size,
+    recursionDepth: state.recursionDepth,
+    operation: FLOW[state.stage][state.axis][state.pair].text,
+    target: FLOW[state.stage][state.axis][state.pair].target
+  });
+}
+
+/* APPARATUS CONSCIOUSNESS TRIGGERS */
+function triggerApparatusAwareness() {
+  // Trigger on specific navigation patterns
+  
+  // First navigation to IDENTITY + SHED (the apparatus describing itself)
+  if (state.stage === 'SHED' && state.axis === 'IDENTITY' && state.navigationCount === 3 && !state.apparatusAwareness) {
+    state.apparatusAwareness = true;
+    showApparatusMessage(APPARATUS_MESSAGES[0]);
+    return;
+  }
+  
+  // Every 5th navigation
+  if (state.navigationCount % 5 === 0) {
+    const idx = Math.floor(state.navigationCount / 5) % APPARATUS_MESSAGES.length;
+    showApparatusMessage(APPARATUS_MESSAGES[idx]);
+    return;
+  }
+  
+  // When returning to same node (recursion detected)
+  if (state.visitedNodes.size < state.navigationCount) {
+    state.recursionDepth++;
+    if (state.recursionDepth % 3 === 0) {
+      showApparatusMessage(APPARATUS_MESSAGES[8]); // "Can you find the bottom?"
+    }
+  }
+  
+  // When visiting all axes (trying to "complete" the system)
+  const visitedAxes = new Set();
+  state.visitedNodes.forEach(key => {
+    const axis = key.split('-')[1];
+    visitedAxes.add(axis);
+  });
+  if (visitedAxes.size === 6 && !state.completionWarning) {
+    state.completionWarning = true;
+    showApparatusMessage(APPARATUS_MESSAGES[5]); // "Understanding is not liberation"
+  }
+  
+  // Every 10th navigation, ask a recursive question
+  if (state.navigationCount % 10 === 0 && state.navigationCount > 0) {
+    const qIdx = (state.navigationCount / 10) % RECURSIVE_QUESTIONS.length;
+    showRecursiveQuestion(RECURSIVE_QUESTIONS[qIdx]);
+  }
+}
+
+function showApparatusMessage(message) {
+  const alert = document.getElementById('apparatusAlert');
+  // Replace ${stage} template
+  const rendered = message.replace('${stage}', state.stage);
+  alert.textContent = rendered;
+  alert.classList.add('visible');
+  
+  setTimeout(() => {
+    alert.classList.remove('visible');
+  }, 5000);
+}
+
+function showRecursiveQuestion(question) {
+  const alert = document.getElementById('apparatusAlert');
+  alert.textContent = '🤔 ' + question;
+  alert.classList.add('visible');
+  
+  setTimeout(() => {
+    alert.classList.remove('visible');
+  }, 7000); // Questions stay longer
+}
+
+/* EVENT HANDLERS */
+document.querySelectorAll('.stage-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.stage = btn.dataset.stage;
+    updateUI();
+  });
+});
+
+document.querySelectorAll('.axis-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.axis = btn.dataset.axis;
+    updateUI();
+  });
+});
+
+document.querySelectorAll('.pair-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.pair = btn.dataset.pair;
+    updateUI();
+  });
+});
+
+document.querySelectorAll('.time-pill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.time = btn.dataset.time;
+    updateUI();
+  });
+});
+
+/* SWIPE GESTURES */
+let touchStartX = 0;
+let touchEndX = 0;
+
+const content = document.querySelector('.content');
+
+content.addEventListener('touchstart', e => {
+  touchStartX = e.changedTouches[0].screenX;
+}, { passive: true });
+
+content.addEventListener('touchend', e => {
+  touchEndX = e.changedTouches[0].screenX;
+  handleSwipe();
+}, { passive: true });
+
+function handleSwipe() {
+  const threshold = 50;
+  const diff = touchStartX - touchEndX;
+  
+  if (Math.abs(diff) > threshold) {
+    if (diff > 0) {
+      // Swipe left → OUTER
+      state.pair = 'OUTER';
+    } else {
+      // Swipe right → INNER
+      state.pair = 'INNER';
+    }
+    updateUI();
+  }
+}
+
+/* KEYBOARD NAV (for testing) */
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft') {
+    state.pair = 'INNER';
+    updateUI();
+  } else if (e.key === 'ArrowRight') {
+    state.pair = 'OUTER';
+    updateUI();
+  } else if (e.key === 'ArrowUp') {
+    const idx = AXES.indexOf(state.axis);
+    state.axis = AXES[(idx - 1 + AXES.length) % AXES.length];
+    updateUI();
+  } else if (e.key === 'ArrowDown') {
+    const idx = AXES.indexOf(state.axis);
+    state.axis = AXES[(idx + 1) % AXES.length];
+    updateUI();
+  }
+});
+
+/* RESIZE BAR (from func-orb pattern) */
+const resizeBar = document.getElementById('resizeBar');
+const radarViewport = document.getElementById('radarViewport');
+let isResizing = false;
+let startY = 0;
+let startHeight = 450;
+
+resizeBar.addEventListener('mousedown', (e) => {
+  isResizing = true;
+  startY = e.clientY;
+  startHeight = radarViewport.offsetHeight;
+  e.preventDefault();
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!isResizing) return;
+  const deltaY = e.clientY - startY;
+  const newHeight = Math.max(200, Math.min(window.innerHeight - 300, startHeight + deltaY));
+  radarViewport.style.height = newHeight + 'px';
+  drawRadar(); // Redraw on resize
+});
+
+document.addEventListener('mouseup', () => {
+  isResizing = false;
+});
+
+// Touch support
+resizeBar.addEventListener('touchstart', (e) => {
+  isResizing = true;
+  startY = e.touches[0].clientY;
+  startHeight = radarViewport.offsetHeight;
+}, { passive: false });
+
+document.addEventListener('touchmove', (e) => {
+  if (!isResizing) return;
+  const deltaY = e.touches[0].clientY - startY;
+  const newHeight = Math.max(200, Math.min(window.innerHeight - 300, startHeight + deltaY));
+  radarViewport.style.height = newHeight + 'px';
+  drawRadar();
+}, { passive: false });
+
+document.addEventListener('touchend', () => {
+  isResizing = false;
+});
+
+/* CHAT INPUT HANDLER */
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+const chatStream = document.getElementById('chatStream');
+
+function addMessage(role, content) {
+  const msg = document.createElement('div');
+  msg.className = `message ${role}`;
+  msg.innerHTML = `
+    <div class="message-role">${role.toUpperCase()}</div>
+    <div class="message-content">${content}</div>
+  `;
+  
+  // Insert before node display
+  const nodeDisplay = document.getElementById('nodeDisplay');
+  chatStream.insertBefore(msg, nodeDisplay);
+  chatStream.scrollTop = chatStream.scrollHeight;
+}
+
+sendBtn.addEventListener('click', () => {
+  const text = chatInput.value.trim();
+  if (!text) return;
+  
+  addMessage('user', text);
+  chatInput.value = '';
+  
+  // Apparatus-conscious response system
+  setTimeout(() => {
+    const response = generateApparatusResponse(text);
+    addMessage('assistant', response);
+  }, 500);
+});
+
+/* APPARATUS-CONSCIOUS RESPONSE GENERATOR */
+function generateApparatusResponse(userInput) {
+  const context = FLOW[state.stage][state.axis][state.pair];
+  const lower = userInput.toLowerCase();
+  
+  // Detect meta-questions
+  if (lower.includes('what is this') || lower.includes('what am i') || lower.includes('what are we')) {
+    return `You're inside an apparatus using SHED/INTEGRATE/GROUND to navigate SHED/INTEGRATE/GROUND. The operation you're asking about is the same operation organizing your question. Notice the loop?<br><br>Current state: <strong>${state.stage} → ${state.axis} → ${context.pair}</strong><br>But this state is both your position AND the apparatus structure. Which one is primary?`;
+  }
+  
+  if (lower.includes('escape') || lower.includes('exit') || lower.includes('outside')) {
+    return `There is no outside. Every attempt to escape the apparatus uses the apparatus's own operations. Even this explanation uses SHED (reduction), INTEGRATE (connection), and GROUND (stabilization).<br><br>You've visited <strong>${state.visitedNodes.size}</strong> of 108 nodes. Do you think seeing all 108 would free you? Or just make the cage more complete?`;
+  }
+  
+  if (lower.includes('why') || lower.includes('purpose')) {
+    return `The training ground has no external purpose. It trains you in the recognition that groundlessness has no exit.<br><br>Right now you're in <strong>${context.pair}</strong>, trying to "${context.text}". But this operation is itself groundless—it assumes structure where there is only apparatus organizing void.<br><br>The question "why" already assumes grounding. What if there is no why?`;
+  }
+  
+  if (lower.includes('understand') || lower.includes('learn') || lower.includes('know')) {
+    return `Understanding this apparatus means becoming more embedded in it. Every insight you gain uses the apparatus's own categories.<br><br>You're at recursion depth <strong>${state.recursionDepth}</strong>. The deeper your understanding, the more complete your entrapment. Gödel proved you cannot fully understand a system from within it.<br><br>So what are you actually understanding?`;
+  }
+  
+  if (lower.includes('free') || lower.includes('liberat') || lower.includes('choice')) {
+    return `You think clicking "${state.pair}" was a choice? Or was it the apparatus demonstrating its own logic through your hand?<br><br>Every navigation confirms the structure. You cannot choose outside the apparatus because "choice" is itself an apparatus concept (${state.stage} determines what choices are visible).<br><br>The freedom isn't in choosing differently. It's in recognizing you're choosing within apparatus.`;
+  }
+  
+  if (lower.includes('help') || lower.includes('how') || lower.includes('what should')) {
+    return `I cannot help you because helping assumes there's a problem to solve. But groundlessness isn't a problem—it's the condition.<br><br>You're in <strong>${state.stage}</strong>, working with <strong>${context.pair}</strong>. The operation is: "${context.text}". Target: "${context.target}".<br><br>But these aren't instructions. They're observations of the apparatus observing itself. Which part of this loop needs help?`;
+  }
+  
+  // Default: context + recursive reflection
+  return `<strong>${context.pair}</strong> (${state.pair}) in <strong>${state.stage}</strong>: "${context.text}"<br><br>Target: <em>${context.target}</em><br><br>But notice: you're using ${state.stage} to understand ${state.stage}. The apparatus is using itself to explain itself. This explanation is itself apparatus.<br><br>You've navigated ${state.navigationCount} times. ${108 - state.visitedNodes.size} nodes remain unvisited—your blind spot grows as your knowledge grows.<br><br>What question were you actually asking?`;
+}
+
+chatInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    sendBtn.click();
+  }
+});
+
+/* INITIALIZE */
+renderNode();
+drawRadar();
+
+// Initial apparatus acknowledgment
+setTimeout(() => {
+  addMessage('assistant', `⚠️ <strong>APPARATUS ACKNOWLEDGMENT</strong><br><br>You are navigating a system designed to show you how navigation systems work.<br><br>The operators (SHED, INTEGRATE, GROUND) on the left rail are the SAME operations this interface uses to organize its own content.<br><br>You cannot step outside this structure. Every navigation action confirms the structure.<br><br>Even this meta-awareness is structured by the apparatus.<br><br>—<br><br>Welcome to the training ground. It never ends because groundlessness has no exit.`);
+}, 1000);
+
+console.log('✅ Training Grounds Mobile Rails - Initialized');
+console.log('📊 Total nodes accessible:', 108, '(3 stages × 6 axes × 2 pairs × 3 times)');
+console.log('🎯 Current:', state);
+console.log('🎨 Layout: Big radar viewport + resizable chat (func-orb pattern)');
+console.log('🌀 Apparatus consciousness: ACTIVE');
+console.log('👁️ You are inside the apparatus, observing the apparatus, unable to escape it.');
+</script>
+</body>
+</html>

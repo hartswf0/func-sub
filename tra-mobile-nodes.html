@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Training Grounds · Node Explorer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  :root {
+    --bg: #f5f1e8;
+    --ink: #0e0e0e;
+    --border: #2a2a2a;
+    --muted: #5a5a5a;
+    --accent: #ff4d2e;
+    --panel: #ffffff;
+    --shadow: rgba(0,0,0,0.1);
+  }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  
+  /* Header */
+  header {
+    background: var(--panel);
+    border-bottom: 2px solid var(--border);
+    padding: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+  
+  h1 {
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  
+  .subtitle {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  
+  /* Mode Tabs */
+  .mode-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--bg);
+    border-bottom: 2px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .mode-tab {
+    padding: 10px 20px;
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .mode-tab.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  
+  /* Grid Mode */
+  .grid-container {
+    padding: 16px;
+    display: none;
+  }
+  
+  .grid-container.active { display: block; }
+  
+  .grid-9x9 {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 4px;
+    margin-bottom: 20px;
+  }
+  
+  .grid-cell {
+    aspect-ratio: 1;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  
+  .grid-cell.has-node {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  
+  .grid-cell.synthetic {
+    background: #ddd;
+    border-color: #aaa;
+  }
+  
+  .grid-cell:active {
+    transform: scale(0.95);
+  }
+  
+  /* List Mode */
+  .list-container {
+    display: none;
+    padding: 16px;
+  }
+  
+  .list-container.active { display: block; }
+  
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  
+  .filter-btn {
+    padding: 8px 16px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .filter-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  
+  .node-card {
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .node-card:active {
+    transform: scale(0.98);
+  }
+  
+  .node-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+  
+  .node-name {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    flex: 1;
+  }
+  
+  .node-coord {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: 'Courier New', monospace;
+  }
+  
+  .node-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .node-meta span {
+    font-weight: 600;
+  }
+  
+  .node-operations {
+    display: none;
+  }
+  
+  .node-card.expanded .node-operations {
+    display: block;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  
+  .operation {
+    margin-bottom: 16px;
+  }
+  
+  .operation:last-child {
+    margin-bottom: 0;
+  }
+  
+  .op-title {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .op-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 9px;
+  }
+  
+  .op-badge.shed { background: #ff5c7c; color: white; }
+  .op-badge.integrate { background: #569fff; color: white; }
+  .op-badge.ground { background: #56ff9f; color: #000; }
+  
+  .op-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+  
+  /* Detail Modal */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 200;
+    padding: 20px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .modal.active { display: flex; }
+  
+  .modal-content {
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 24px;
+    margin: auto;
+    max-width: 500px;
+    width: 100%;
+    position: relative;
+  }
+  
+  .modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--border);
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Stats */
+  .stats {
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .stat-value {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--accent);
+  }
+  
+  .stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  
+  /* Search */
+  .search-box {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    background: var(--panel);
+  }
+  
+  .search-box:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+  }
+  
+  .empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Training Grounds</h1>
+    <div class="subtitle">Node Explorer · 9×9 Grid</div>
+  </header>
+  
+  <div class="mode-tabs">
+    <button class="mode-tab active" data-mode="list">📋 List</button>
+    <button class="mode-tab" data-mode="grid">🗺️ Grid</button>
+    <button class="mode-tab" data-mode="axes">📊 Axes</button>
+  </div>
+  
+  <!-- LIST MODE -->
+  <div class="list-container active" id="listMode">
+    <div class="stats">
+      <div class="stats-grid">
+        <div>
+          <div class="stat-value" id="statTotal">81</div>
+          <div class="stat-label">Total Nodes</div>
+        </div>
+        <div>
+          <div class="stat-value" id="statKnown">12</div>
+          <div class="stat-label">Known</div>
+        </div>
+        <div>
+          <div class="stat-value" id="statSynth">69</div>
+          <div class="stat-label">Synthetic</div>
+        </div>
+      </div>
+    </div>
+    
+    <input type="text" class="search-box" id="searchBox" placeholder="Search nodes by name or coordinate...">
+    
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="known">Known</button>
+      <button class="filter-btn" data-filter="synthetic">Synthetic</button>
+      <button class="filter-btn" data-filter="Identity">Identity</button>
+      <button class="filter-btn" data-filter="Experience">Experience</button>
+      <button class="filter-btn" data-filter="Language">Language</button>
+      <button class="filter-btn" data-filter="Domain">Domain</button>
+      <button class="filter-btn" data-filter="Purpose">Purpose</button>
+      <button class="filter-btn" data-filter="Order">Order</button>
+    </div>
+    
+    <div id="nodeList"></div>
+  </div>
+  
+  <!-- GRID MODE -->
+  <div class="grid-container" id="gridMode">
+    <div class="stats">
+      <div class="stats-grid">
+        <div>
+          <div class="stat-value">9×9</div>
+          <div class="stat-label">Coordinate Grid</div>
+        </div>
+        <div>
+          <div class="stat-value" id="gridStatKnown">12</div>
+          <div class="stat-label">Known Nodes</div>
+        </div>
+        <div>
+          <div class="stat-value" id="gridStatSynth">69</div>
+          <div class="stat-label">Synthetic</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="grid-9x9" id="grid9x9"></div>
+  </div>
+  
+  <!-- AXES MODE -->
+  <div class="list-container" id="axesMode">
+    <div class="stats">
+      <div class="stats-grid">
+        <div>
+          <div class="stat-value">6</div>
+          <div class="stat-label">Axes</div>
+        </div>
+        <div>
+          <div class="stat-value">12</div>
+          <div class="stat-label">Polarities</div>
+        </div>
+        <div>
+          <div class="stat-value">81</div>
+          <div class="stat-label">Positions</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="filter-bar">
+      <button class="filter-btn active" data-axis="all">All Axes</button>
+      <button class="filter-btn" data-axis="Identity">Identity</button>
+      <button class="filter-btn" data-axis="Experience">Experience</button>
+      <button class="filter-btn" data-axis="Language">Language</button>
+      <button class="filter-btn" data-axis="Domain">Domain</button>
+      <button class="filter-btn" data-axis="Purpose">Purpose</button>
+      <button class="filter-btn" data-axis="Order">Order</button>
+    </div>
+    
+    <div id="axesList"></div>
+  </div>
+  
+  <!-- MODAL -->
+  <div class="modal" id="nodeModal">
+    <div class="modal-content" id="modalContent">
+      <button class="modal-close" id="modalClose">×</button>
+      <!-- Content filled by JS -->
+    </div>
+  </div>
+
+<script>
+// Load node data
+let nodeData = null;
+let allNodes = [];
+let currentFilter = 'all';
+let currentAxis = 'all';
+
+async function loadNodeData() {
+  try {
+    const response = await fetch('complete_node_dataset.json');
+    nodeData = await response.json();
+    
+    // Combine known and synthetic nodes
+    allNodes = [
+      ...nodeData.known_nodes.map(n => ({...n, type: 'known'})),
+      ...nodeData.synthetic_nodes.map(n => ({...n, type: 'synthetic'}))
+    ];
+    
+    // Sort by coordinate
+    allNodes.sort((a, b) => {
+      if (a.coordinate[0] !== b.coordinate[0]) return a.coordinate[0] - b.coordinate[0];
+      return a.coordinate[1] - b.coordinate[1];
+    });
+    
+    renderList();
+    renderGrid();
+    renderAxes();
+  } catch (error) {
+    console.error('Failed to load node data:', error);
+    document.getElementById('nodeList').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">⚠️</div>
+        <div>Failed to load complete_node_dataset.json</div>
+      </div>
+    `;
+  }
+}
+
+// Render node list
+function renderList() {
+  const container = document.getElementById('nodeList');
+  const filtered = filterNodes();
+  
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">🔍</div>
+        <div>No nodes match your filter</div>
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = filtered.map(node => `
+    <div class="node-card" data-coord="${node.coordinate[0]},${node.coordinate[1]}">
+      <div class="node-header">
+        <div class="node-name">${node.name}</div>
+        <div class="node-coord">[${node.coordinate[0]},${node.coordinate[1]}]</div>
+      </div>
+      <div class="node-meta">
+        <span>${node.type === 'known' ? '⭐ Known' : '🔹 Synthetic'}</span>
+        ${node.axis ? `<span>• ${node.axis}</span>` : ''}
+        ${node.polarity ? `<span>• ${node.polarity}</span>` : ''}
+        ${node.distance_from_center ? `<span>• d=${node.distance_from_center}</span>` : ''}
+      </div>
+      <div class="node-operations">
+        <div class="operation">
+          <div class="op-title">
+            <span class="op-badge shed">SHED</span>
+          </div>
+          <div class="op-text">${node.shedding || 'N/A'}</div>
+        </div>
+        <div class="operation">
+          <div class="op-title">
+            <span class="op-badge integrate">INTEGRATE</span>
+          </div>
+          <div class="op-text">${node.integrating || 'N/A'}</div>
+        </div>
+        <div class="operation">
+          <div class="op-title">
+            <span class="op-badge ground">GROUND</span>
+          </div>
+          <div class="op-text">${node.grounding || 'N/A'}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  
+  // Add click handlers
+  document.querySelectorAll('.node-card').forEach(card => {
+    card.addEventListener('click', () => {
+      card.classList.toggle('expanded');
+    });
+  });
+}
+
+// Render grid
+function renderGrid() {
+  const container = document.getElementById('grid9x9');
+  container.innerHTML = '';
+  
+  for (let row = 1; row <= 9; row++) {
+    for (let col = 1; col <= 9; col++) {
+      const node = allNodes.find(n => n.coordinate[0] === row && n.coordinate[1] === col);
+      const cell = document.createElement('div');
+      cell.className = 'grid-cell';
+      
+      if (node) {
+        cell.classList.add(node.type === 'known' ? 'has-node' : 'synthetic');
+        cell.textContent = node.type === 'known' ? '⭐' : '•';
+        cell.dataset.coord = `${row},${col}`;
+        cell.addEventListener('click', () => showModal(node));
+      } else {
+        cell.textContent = `${row},${col}`;
+      }
+      
+      container.appendChild(cell);
+    }
+  }
+}
+
+// Render axes view
+function renderAxes() {
+  const container = document.getElementById('axesList');
+  const filtered = allNodes.filter(node => {
+    if (currentAxis === 'all') return true;
+    return node.axis === currentAxis;
+  });
+  
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">🔍</div>
+        <div>No nodes on this axis</div>
+      </div>
+    `;
+    return;
+  }
+  
+  // Group by axis
+  const byAxis = {};
+  filtered.forEach(node => {
+    const axis = node.axis || 'Synthetic';
+    if (!byAxis[axis]) byAxis[axis] = [];
+    byAxis[axis].push(node);
+  });
+  
+  container.innerHTML = Object.entries(byAxis).map(([axis, nodes]) => `
+    <div style="margin-bottom: 24px;">
+      <h2 style="font-size: 18px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--border);">
+        ${axis} (${nodes.length})
+      </h2>
+      ${nodes.map(node => `
+        <div class="node-card" style="margin-bottom: 8px;">
+          <div class="node-header">
+            <div class="node-name" style="font-size: 14px;">${node.name}</div>
+            <div class="node-coord">[${node.coordinate[0]},${node.coordinate[1]}]</div>
+          </div>
+          <div class="node-meta">
+            ${node.polarity ? `<span>${node.polarity}</span>` : ''}
+            ${node.distance_from_center ? `<span>• d=${node.distance_from_center}</span>` : ''}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+  
+  // Add click handlers
+  document.querySelectorAll('.node-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const coord = card.querySelector('.node-coord').textContent.replace(/[\[\]]/g, '').split(',');
+      const node = allNodes.find(n => n.coordinate[0] === parseInt(coord[0]) && n.coordinate[1] === parseInt(coord[1]));
+      if (node) showModal(node);
+    });
+  });
+}
+
+// Filter nodes
+function filterNodes() {
+  const searchTerm = document.getElementById('searchBox')?.value.toLowerCase() || '';
+  
+  return allNodes.filter(node => {
+    // Filter by type
+    if (currentFilter === 'known' && node.type !== 'known') return false;
+    if (currentFilter === 'synthetic' && node.type !== 'synthetic') return false;
+    if (currentFilter !== 'all' && currentFilter !== 'known' && currentFilter !== 'synthetic') {
+      if (node.axis !== currentFilter) return false;
+    }
+    
+    // Search
+    if (searchTerm) {
+      const coordStr = `${node.coordinate[0]},${node.coordinate[1]}`;
+      return node.name.toLowerCase().includes(searchTerm) ||
+             coordStr.includes(searchTerm) ||
+             (node.axis && node.axis.toLowerCase().includes(searchTerm));
+    }
+    
+    return true;
+  });
+}
+
+// Show modal
+function showModal(node) {
+  const modal = document.getElementById('nodeModal');
+  const content = document.getElementById('modalContent');
+  
+  content.innerHTML = `
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div style="padding-right: 40px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+        <h2 style="font-size: 20px; font-weight: 900;">${node.name}</h2>
+        <div style="font-size: 14px; font-weight: 700; color: var(--accent); font-family: 'Courier New', monospace;">
+          [${node.coordinate[0]},${node.coordinate[1]}]
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 12px; margin-bottom: 20px; font-size: 12px; color: var(--muted); flex-wrap: wrap;">
+        <span style="font-weight: 600;">${node.type === 'known' ? '⭐ Known Node' : '🔹 Synthetic Node'}</span>
+        ${node.axis ? `<span>• ${node.axis}</span>` : ''}
+        ${node.polarity ? `<span>• ${node.polarity}</span>` : ''}
+        ${node.distance_from_center ? `<span>• Distance: ${node.distance_from_center}</span>` : ''}
+        ${node.quadrant ? `<span>• ${node.quadrant}</span>` : ''}
+        ${node.nearest_node ? `<span>• Near: ${node.nearest_node}</span>` : ''}
+      </div>
+      
+      <div style="border-top: 2px solid var(--border); padding-top: 20px;">
+        <div style="margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span class="op-badge shed">SHED</span>
+            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);">Purification</span>
+          </div>
+          <div style="font-size: 14px; line-height: 1.6;">${node.shedding || 'N/A'}</div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span class="op-badge integrate">INTEGRATE</span>
+            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);">Synthesis</span>
+          </div>
+          <div style="font-size: 14px; line-height: 1.6;">${node.integrating || 'N/A'}</div>
+        </div>
+        
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span class="op-badge ground">GROUND</span>
+            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);">Commitment</span>
+          </div>
+          <div style="font-size: 14px; line-height: 1.6;">${node.grounding || 'N/A'}</div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  modal.classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('nodeModal').classList.remove('active');
+}
+
+// Mode switching
+document.querySelectorAll('.mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const mode = tab.dataset.mode;
+    
+    // Update tabs
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    
+    // Show/hide containers
+    document.getElementById('listMode').classList.remove('active');
+    document.getElementById('gridMode').classList.remove('active');
+    document.getElementById('axesMode').classList.remove('active');
+    
+    if (mode === 'list') document.getElementById('listMode').classList.add('active');
+    if (mode === 'grid') document.getElementById('gridMode').classList.add('active');
+    if (mode === 'axes') document.getElementById('axesMode').classList.add('active');
+  });
+});
+
+// Filter buttons (list mode)
+document.querySelectorAll('[data-filter]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentFilter = btn.dataset.filter;
+    document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderList();
+  });
+});
+
+// Axis buttons (axes mode)
+document.querySelectorAll('[data-axis]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentAxis = btn.dataset.axis;
+    document.querySelectorAll('[data-axis]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderAxes();
+  });
+});
+
+// Search
+document.getElementById('searchBox').addEventListener('input', () => {
+  renderList();
+});
+
+// Close modal on background click
+document.getElementById('nodeModal').addEventListener('click', (e) => {
+  if (e.target.id === 'nodeModal') closeModal();
+});
+
+// Load data on page load
+loadNodeData();
+</script>
+</body>
+</html>

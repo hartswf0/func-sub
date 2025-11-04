@@ -1,0 +1,810 @@
+{
+  "metadata": {
+    "title": "Synthetic Node Coordinate Dataset",
+    "description": "Complete 9x9 grid mapping with 12 known nodes and 69 synthetic coordinates",
+    "version": "1.0",
+    "generation_date": "2025-11-03",
+    "methodology": "Geometric interpolation based on distance from center (5,5), nearest node influence, and axis blending",
+    "total_coordinates": 81,
+    "known_coordinates": 12,
+    "synthetic_coordinates": 69
+  },
+  
+  "known_nodes": [
+    {
+      "id": 1,
+      "coordinate": [1, 5],
+      "name": "Identity Inner",
+      "subtitle": "Instinct",
+      "axis": "Identity",
+      "polarity": "Inner",
+      "shedding": "Recognize compromise as your nature. Incorporating others, balancing opposites and respecting duality is appreciated. However, this measured approach must be released from the focus of your life.",
+      "integrating": "Address precarious, stagnant energy. In seeking approval, you sacrifice trust in your own instincts. Integrate your complementary desire to find ease in individuality.",
+      "grounding": "Honor your impulses. Embrace unwavering selfhood. Go on solo adventures. Grounding this energy means developing a 'me' focus, taking risks with confidence."
+    },
+    {
+      "id": 2,
+      "coordinate": [1, 7],
+      "name": "Experience Inner",
+      "subtitle": "Seen",
+      "axis": "Experience",
+      "polarity": "Inner",
+      "shedding": "Recognize intensity as your nature. Transformation, energy contracts, emotional complexity are appreciated. However, this deep, entangled approach must be released from the focus of your life.",
+      "integrating": "Address mistrusting, chaos-prone energy. Involving in power dynamics, protecting against the shadow side of situations, you sacrifice ease and calm. Integrate your complementary desire for stable self-reliance.",
+      "grounding": "Center your value. Settle into structure. Be in nature. Please your senses. Form boundaries to preserve your peace. Draw power from serenity and reliable experiences."
+    },
+    {
+      "id": 3,
+      "coordinate": [3, 9],
+      "name": "Language Inner",
+      "subtitle": "Ideas",
+      "axis": "Language",
+      "polarity": "Inner",
+      "shedding": "Recognize philosophy and adventure as your nature. Seeing the bigger picture is appreciated. However, this profound approach must be released from the focus of your life.",
+      "integrating": "Address unapproachable energy. Exalting your virtues or exaggerated personal freedom comes at the sacrifice of simple curiosity. Integrate a complementary desire to converse without bias.",
+      "grounding": "Let others inform you. Play with ideas. Detach from staunch perspectives. Grounding this energy means embracing the temporary nature of a zeitgeist."
+    },
+    {
+      "id": 4,
+      "coordinate": [5, 9],
+      "name": "Domain Inner",
+      "subtitle": "Source",
+      "axis": "Domain",
+      "polarity": "Inner",
+      "shedding": "Recognize material ambition as your nature. Climbing to reach tangible goals is appreciated. However, this stoic approach must be released from the focus of your life.",
+      "integrating": "Address melancholic energy. Pursuing established status for yourself or others, you sacrifice nurturing internal emotions and external connections. Integrate a complementary need for vulnerability, deep personal experiences.",
+      "grounding": "Tend to your feelings. Create rituals. Withdraw from public eyes. Nurture the hearts of others, helping you pour into yourself."
+    },
+    {
+      "id": 5,
+      "coordinate": [7, 9],
+      "name": "Purpose Inner",
+      "subtitle": "Heart",
+      "axis": "Purpose",
+      "polarity": "Inner",
+      "shedding": "Recognize logic as your nature. Progressive, humanitarian thinking is appreciated. However, this intellectual approach must be released from the focus of your life.",
+      "integrating": "Address detached, group-oriented energy. Focusing on collective needs or social advocacy, you sacrifice the inner child desire for play. Integrate your complementary desire for creative expression.",
+      "grounding": "Lead with your heart. Integrate drama. Initiate romance. Take center stage and inspire others. Love and generosity will help you channel your innate altruism into purposeful achievements."
+    },
+    {
+      "id": 6,
+      "coordinate": [9, 7],
+      "name": "Order Inner",
+      "subtitle": "Parts",
+      "axis": "Order",
+      "polarity": "Inner",
+      "shedding": "Recognize sensitivity as your nature. Being connected and visionary with keen intuition is appreciated. However, this fluid approach must be released from the focus of your life.",
+      "integrating": "Address self-undoing energy. Empathizing with those around you, you sacrifice your emotional health and psychic wellbeing. Integrate a complementary desire to say no.",
+      "grounding": "Create healthy structure and routine. Get organized. Maintain physical and energetic tidiness. Make detail-oriented plans."
+    },
+    {
+      "id": 7,
+      "coordinate": [9, 5],
+      "name": "Identity Outer",
+      "subtitle": "Reason",
+      "axis": "Identity",
+      "polarity": "Outer",
+      "shedding": "Recognize individuating as your nature. Drive, discovery and following your instincts is appreciated. However, this youthful just-do-it approach must be released from the focus of your life.",
+      "integrating": "Address impulsive, self-focused energy. Blazing your path, you sacrifice the ability to integrate complementary people or perspectives. Integrate your desire to experience ease in partnership.",
+      "grounding": "Share, hold space for others. Consider their needs and experience. See both sides of an argument before making decisions."
+    },
+    {
+      "id": 8,
+      "coordinate": [9, 3],
+      "name": "Experience Outer",
+      "subtitle": "Unseen",
+      "axis": "Experience",
+      "polarity": "Outer",
+      "shedding": "Recognize sensuality and stability as your nature. Steadfastness is appreciated. However this slow, steady approach must be released from the focus of your life.",
+      "integrating": "Address controlling, rigid energy. Holding on to situations or a comfort zone, you sacrifice deep personal growth opportunities. Integrate a complementary desire to purge, exchange and experience transformation.",
+      "grounding": "Go deep and transmute. Discard stale limitations. Release unnecessary boundaries. The more you let go, the more you step into new life."
+    },
+    {
+      "id": 9,
+      "coordinate": [7, 1],
+      "name": "Language Outer",
+      "subtitle": "Ideology",
+      "axis": "Language",
+      "polarity": "Outer",
+      "shedding": "Recognize intellectual adaptability as your nature. Assimilating social codes and information is appreciated. However, this impartial approach must be released from the focus of your life.",
+      "integrating": "Address duplicitous energy. Tailoring your speech to an audience or environment, you sacrifice expressing your truth. Integrate a complementary desire to be honest, see the forest for the trees.",
+      "grounding": "Unplug from external perspectives. Anchor your beliefs, speak confidently from that place. Cultivate faith that lights the way from within."
+    },
+    {
+      "id": 10,
+      "coordinate": [5, 1],
+      "name": "Domain Outer",
+      "subtitle": "Resource",
+      "axis": "Domain",
+      "polarity": "Outer",
+      "shedding": "Recognize tenderness as your nature. Nurturing your feelings, being cautious is appreciated. However, this sensitive approach must be released from the focus of your life.",
+      "integrating": "Address needy or wary emotional energy. Staying rooted, keeping things close, you sacrifice stepping into greater responsibility to realize substantive foundations. Integrate your complementary need to manage practical affairs.",
+      "grounding": "Shoulder important endeavors. Be pragmatic. Take charge with integrity. Consider your legacy in the world, maintaining healthy long-term goals."
+    },
+    {
+      "id": 11,
+      "coordinate": [3, 1],
+      "name": "Purpose Outer",
+      "subtitle": "Head",
+      "axis": "Purpose",
+      "polarity": "Outer",
+      "shedding": "Recognize leadership or artistry as your nature. Commanding the center of attention is appreciated. However, passion and showiness must be released from the focus of your life.",
+      "integrating": "Address bossy, attention-seeking energy. Displaying talents for praise or pleasure, you sacrifice contributing to group advancements. Integrate a complementary desire to consider collective efforts.",
+      "grounding": "Advocate for social cause. Be future-minded. Explore your innovative, intellectual side. Join a group or network."
+    },
+    {
+      "id": 12,
+      "coordinate": [1, 3],
+      "name": "Order Outer",
+      "subtitle": "Whole",
+      "axis": "Order",
+      "polarity": "Outer",
+      "shedding": "Recognize precision as your nature. Attention to detail and methodical plans are appreciated. However, this meticulous approach must be released from the focus of your life.",
+      "integrating": "Address critical, perfectionistic energy. Analyzing presentation and results, you sacrifice gentleness with yourself and others. Integrate a complementary desire to release and forgive.",
+      "grounding": "Go with the flow. Develop a spiritual practice. Tune out physical concerns. Listen to intuition."
+    }
+  ],
+
+  "synthetic_nodes": [
+    {
+      "coordinate": [1, 1],
+      "name": "Primal Chaos",
+      "distance_from_center": 5.66,
+      "quadrant": "Lower-Left",
+      "nearest_node": "Order Outer (Whole)",
+      "shedding": "Release attachment to primordial disorder. Your comfort with raw, unstructured experience must give way.",
+      "integrating": "Address fear of form. Integrate structure without losing wildness.",
+      "grounding": "Dance at the edge of chaos and order. Build containers that hold mystery."
+    },
+    {
+      "coordinate": [1, 2],
+      "name": "Silent Depths",
+      "distance_from_center": 5.0,
+      "quadrant": "Lower-Left",
+      "nearest_node": "Order Outer (Whole)",
+      "shedding": "Release hiding in the depths. Your nature seeks the unseen, but this withdrawal must soften.",
+      "integrating": "Address fear of surfacing. Integrate visibility without losing depth.",
+      "grounding": "Emerge from the depths periodically. Let what's hidden be witnessed."
+    },
+    {
+      "coordinate": [1, 4],
+      "name": "Instinctual Roots",
+      "distance_from_center": 4.12,
+      "quadrant": "Left Edge",
+      "nearest_node": "Identity Inner (Instinct)",
+      "shedding": "Release over-reliance on gut feelings. Your animal knowing is strong, but needs refinement.",
+      "integrating": "Address reactive patterns. Integrate discernment with instinct.",
+      "grounding": "Pause between impulse and action. Let instinct inform, not command."
+    },
+    {
+      "coordinate": [1, 6],
+      "name": "Emotional Alchemy",
+      "distance_from_center": 4.12,
+      "quadrant": "Upper-Left",
+      "nearest_node": "Experience Inner (Seen)",
+      "shedding": "Release drowning in feelings. Your emotional depth must not become a prison.",
+      "integrating": "Address emotional overwhelm. Integrate clarity with sensitivity.",
+      "grounding": "Transmute emotions through expression. Let feelings move through, not stay in."
+    },
+    {
+      "coordinate": [1, 8],
+      "name": "Vulnerable Power",
+      "distance_from_center": 5.0,
+      "quadrant": "Upper-Left",
+      "nearest_node": "Experience Inner (Seen)",
+      "shedding": "Release using vulnerability as armor. Your openness must not become manipulation.",
+      "integrating": "Address over-exposure. Integrate boundaries with authenticity.",
+      "grounding": "Share selectively. Let vulnerability serve connection, not prove worthiness."
+    },
+    {
+      "coordinate": [1, 9],
+      "name": "Primordial Witness",
+      "distance_from_center": 5.66,
+      "quadrant": "Upper-Left Corner",
+      "nearest_node": "Language Inner (Ideas)",
+      "shedding": "Release passive observation. Your witness consciousness must engage.",
+      "integrating": "Address detachment from experience. Integrate participation with awareness.",
+      "grounding": "Be both seer and actor. Witness while fully participating in life."
+    },
+    {
+      "coordinate": [2, 1],
+      "name": "Shadow Integration",
+      "distance_from_center": 5.0,
+      "quadrant": "Lower-Left",
+      "nearest_node": "Purpose Outer (Head)",
+      "shedding": "Release exile of the shadow. Your denial of darkness must end.",
+      "integrating": "Address moral rigidity. Integrate shadow material with consciousness.",
+      "grounding": "Befriend your darkness. Let rejected parts return to wholeness."
+    },
+    {
+      "coordinate": [2, 2],
+      "name": "Underworld Navigator",
+      "distance_from_center": 4.24,
+      "quadrant": "Lower-Left",
+      "nearest_node": "Order Outer (Whole)",
+      "shedding": "Release dwelling in the underworld. Your familiarity with darkness must balance with light.",
+      "integrating": "Address morbid fascination. Integrate emergence with descent.",
+      "grounding": "Journey to depths and return. Let underworld wisdom serve the surface."
+    },
+    {
+      "coordinate": [2, 3],
+      "name": "Holistic Simplicity",
+      "distance_from_center": 3.61,
+      "quadrant": "Lower-Left",
+      "nearest_node": "Order Outer (Whole)",
+      "shedding": "Release complexity addiction. Your love of nuance must not obscure simplicity.",
+      "integrating": "Address over-complication. Integrate elegance with completeness.",
+      "grounding": "Find the simple truth. Let complexity serve clarity, not replace it."
+    },
+    {
+      "coordinate": [2, 4],
+      "name": "Embodied Instinct",
+      "distance_from_center": 3.61,
+      "quadrant": "Left-Central",
+      "nearest_node": "Identity Inner (Instinct)",
+      "shedding": "Release disembodied intuition. Your gut knowing must land in the body.",
+      "integrating": "Address spiritual bypassing. Integrate sensation with insight.",
+      "grounding": "Feel before you know. Let body wisdom guide mental understanding."
+    },
+    {
+      "coordinate": [2, 5],
+      "name": "Identity Threshold",
+      "distance_from_center": 3.0,
+      "quadrant": "Left-Central",
+      "nearest_node": "Identity Inner (Instinct)",
+      "shedding": "Release identity flux. Your shapeshifting nature needs an anchor.",
+      "integrating": "Address identity confusion. Integrate continuity with transformation.",
+      "grounding": "Know your core. Let change happen around a stable center."
+    },
+    {
+      "coordinate": [2, 6],
+      "name": "Feeling Intelligence",
+      "distance_from_center": 3.61,
+      "quadrant": "Upper-Left",
+      "nearest_node": "Experience Inner (Seen)",
+      "shedding": "Release emotional reasoning as sole truth. Your feeling-mind must integrate logic.",
+      "integrating": "Address sentimentality. Integrate discernment with emotion.",
+      "grounding": "Feel and think together. Let emotions inform without determining."
+    },
+    {
+      "coordinate": [2, 7],
+      "name": "Deep Seeing",
+      "distance_from_center": 3.61,
+      "quadrant": "Upper-Left",
+      "nearest_node": "Experience Inner (Seen)",
+      "shedding": "Release compulsive analysis. Your penetrating vision must soften.",
+      "integrating": "Address invasive perception. Integrate respect with insight.",
+      "grounding": "See without dissecting. Let observation honor mystery."
+    },
+    {
+      "coordinate": [2, 8],
+      "name": "Alchemical Witness",
+      "distance_from_center": 4.24,
+      "quadrant": "Upper-Left",
+      "nearest_node": "Experience Inner (Seen)",
+      "shedding": "Release voyeuristic consciousness. Your witnessing must become reciprocal.",
+      "integrating": "Address one-way observation. Integrate mutual seeing.",
+      "grounding": "See and be seen equally. Let witnessing become exchange."
+    },
+    {
+      "coordinate": [2, 9],
+      "name": "Emotional Philosopher",
+      "distance_from_center": 4.47,
+      "quadrant": "Upper-Left",
+      "nearest_node": "Language Inner (Ideas)",
+      "shedding": "Release heart-centered dogma. Your emotional philosophy must allow reason.",
+      "integrating": "Address feeling as only truth. Integrate objectivity with sensitivity.",
+      "grounding": "Feel without concluding. Let emotions inform, not determine."
+    },
+    {
+      "coordinate": [3, 2],
+      "name": "Structural Mysticism",
+      "distance_from_center": 3.61,
+      "quadrant": "Lower-Left",
+      "nearest_node": "Purpose Outer (Head)",
+      "shedding": "Release rigid frameworks for mystery. Your need for structure must allow magic.",
+      "integrating": "Address spiritual materialism. Integrate form with formlessness.",
+      "grounding": "Build containers for the ineffable. Let structure serve mystery."
+    },
+    {
+      "coordinate": [3, 3],
+      "name": "Fractal Wisdom",
+      "distance_from_center": 2.83,
+      "quadrant": "Lower-Left",
+      "nearest_node": "Purpose Outer (Head)",
+      "shedding": "Release pattern obsession. Your ability to see repeating forms must not trap you.",
+      "integrating": "Address reductionist thinking. Integrate uniqueness with pattern.",
+      "grounding": "See patterns and exceptions. Let repetition reveal, not replace, novelty."
+    },
+    {
+      "coordinate": [3, 4],
+      "name": "Grounded Vision",
+      "distance_from_center": 2.24,
+      "quadrant": "Near Center",
+      "nearest_node": "Identity Inner (Instinct)",
+      "shedding": "Release ungrounded idealism. Your visions must find earth.",
+      "integrating": "Address fantasy escape. Integrate practicality with imagination.",
+      "grounding": "Dream with your feet on the ground. Let visions become plans."
+    },
+    {
+      "coordinate": [3, 5],
+      "name": "Creative Balance",
+      "distance_from_center": 2.0,
+      "quadrant": "Near Center",
+      "nearest_node": "Center",
+      "shedding": "Release perfectionist creation. Your drive for balance must allow asymmetry.",
+      "integrating": "Address creative paralysis. Integrate imperfection with craft.",
+      "grounding": "Make messy things. Let creation precede perfection."
+    },
+    {
+      "coordinate": [3, 6],
+      "name": "Philosophical Intimacy",
+      "distance_from_center": 2.24,
+      "quadrant": "Near Center",
+      "nearest_node": "Experience Inner (Seen)",
+      "shedding": "Release intellectualizing feeling. Your mind must let the heart lead sometimes.",
+      "integrating": "Address analysis of emotion. Integrate direct experience with understanding.",
+      "grounding": "Feel before explaining. Let intimacy exist beyond words."
+    },
+    {
+      "coordinate": [3, 7],
+      "name": "Curious Witness",
+      "distance_from_center": 2.83,
+      "quadrant": "Upper-Left",
+      "nearest_node": "Experience Inner (Seen)",
+      "shedding": "Release detached curiosity. Your questions must involve you.",
+      "integrating": "Address observer bias. Integrate participation with inquiry.",
+      "grounding": "Ask from inside experience. Let curiosity be embodied."
+    },
+    {
+      "coordinate": [3, 8],
+      "name": "Philosophical Heart",
+      "distance_from_center": 3.61,
+      "quadrant": "Upper-Left",
+      "nearest_node": "Language Inner (Ideas)",
+      "shedding": "Release loving through understanding. Your intellectual intimacy must allow wordless connection.",
+      "integrating": "Address relationship as research. Integrate presence with comprehension.",
+      "grounding": "Love without explaining. Let connection precede understanding."
+    },
+    {
+      "coordinate": [4, 1],
+      "name": "Material Wisdom",
+      "distance_from_center": 4.12,
+      "quadrant": "Lower-Center",
+      "nearest_node": "Domain Outer (Resource)",
+      "shedding": "Release attachment to form. Your pragmatism must allow transcendence.",
+      "integrating": "Address materialist reductionism. Integrate spirit with matter.",
+      "grounding": "Honor the physical as sacred. Let matter reveal meaning."
+    },
+    {
+      "coordinate": [4, 2],
+      "name": "Resourceful Depth",
+      "distance_from_center": 3.16,
+      "quadrant": "Lower-Center",
+      "nearest_node": "Domain Outer (Resource)",
+      "shedding": "Release hoarding wisdom. Your practical knowledge must circulate.",
+      "integrating": "Address scarcity consciousness. Integrate generosity with prudence.",
+      "grounding": "Share resources wisely. Let abundance flow through you."
+    },
+    {
+      "coordinate": [4, 3],
+      "name": "Pragmatic Wholeness",
+      "distance_from_center": 2.24,
+      "quadrant": "Near Center",
+      "nearest_node": "Purpose Outer (Head)",
+      "shedding": "Release only valuing the useful. Your pragmatism must honor the whole.",
+      "integrating": "Address utilitarian thinking. Integrate beauty with function.",
+      "grounding": "Serve the whole practically. Let utility serve completeness."
+    },
+    {
+      "coordinate": [4, 4],
+      "name": "Embodied Center",
+      "distance_from_center": 1.41,
+      "quadrant": "Inner Ring",
+      "nearest_node": "Center",
+      "shedding": "Release seeking center externally. Your balance is already here.",
+      "integrating": "Address restless searching. Integrate arrival with growth.",
+      "grounding": "Be where you are. Let centeredness be now, not later."
+    },
+    {
+      "coordinate": [4, 5],
+      "name": "Stable Presence",
+      "distance_from_center": 1.0,
+      "quadrant": "Inner Ring",
+      "nearest_node": "Center",
+      "shedding": "Release needing to prove presence. Your being is enough.",
+      "integrating": "Address performance anxiety. Integrate simple existence with action.",
+      "grounding": "Just be. Let presence precede doing."
+    },
+    {
+      "coordinate": [4, 6],
+      "name": "Tender Structure",
+      "distance_from_center": 1.41,
+      "quadrant": "Inner Ring",
+      "nearest_node": "Center",
+      "shedding": "Release hard boundaries. Your structure must allow softness.",
+      "integrating": "Address rigidity. Integrate flexibility with form.",
+      "grounding": "Build with care. Let structures breathe and adapt."
+    },
+    {
+      "coordinate": [4, 7],
+      "name": "Feeling Foundation",
+      "distance_from_center": 2.24,
+      "quadrant": "Near Center",
+      "nearest_node": "Experience Inner (Seen)",
+      "shedding": "Release unstable emotions. Your feelings need grounding.",
+      "integrating": "Address emotional flooding. Integrate containment with expression.",
+      "grounding": "Feel from a foundation. Let emotions arise from stability."
+    },
+    {
+      "coordinate": [4, 8],
+      "name": "Inner Sanctuary",
+      "distance_from_center": 3.16,
+      "quadrant": "Upper-Center",
+      "nearest_node": "Domain Inner (Source)",
+      "shedding": "Release hermetic isolation. Your sanctuary must have doors.",
+      "integrating": "Address withdrawn safety. Integrate communion with solitude.",
+      "grounding": "Create permeable sanctuary. Let inner space connect with outer world."
+    },
+    {
+      "coordinate": [5, 2],
+      "name": "Foundational Resource",
+      "distance_from_center": 3.0,
+      "quadrant": "Lower-Center",
+      "nearest_node": "Domain Outer (Resource)",
+      "shedding": "Release attachment to security. Your foundation is unshakeable.",
+      "integrating": "Address fear of loss. Integrate trust with preparation.",
+      "grounding": "Build on bedrock. Let security come from depth, not accumulation."
+    },
+    {
+      "coordinate": [5, 3],
+      "name": "Abundant Wholeness",
+      "distance_from_center": 2.0,
+      "quadrant": "Near Center",
+      "nearest_node": "Center",
+      "shedding": "Release scarcity thinking. Your wholeness is already complete.",
+      "integrating": "Address lack consciousness. Integrate sufficiency with desire.",
+      "grounding": "Rest in enoughness. Let abundance be recognized, not created."
+    },
+    {
+      "coordinate": [5, 4],
+      "name": "Rooted Axis",
+      "distance_from_center": 1.0,
+      "quadrant": "Inner Ring",
+      "nearest_node": "Center",
+      "shedding": "Release need for external validation. Your center is self-confirming.",
+      "integrating": "Address dependency patterns. Integrate autonomy with connection.",
+      "grounding": "Stand in your axis. Let your center be immovable."
+    },
+    {
+      "coordinate": [5, 5],
+      "name": "The Center",
+      "distance_from_center": 0.0,
+      "quadrant": "Center Point",
+      "nearest_node": "Self",
+      "shedding": "Release everything. Let all patterns dissolve here.",
+      "integrating": "Integrate all polarities. Everything meets at this point.",
+      "grounding": "Be the center. Let all movement spiral around stillness."
+    },
+    {
+      "coordinate": [5, 6],
+      "name": "Vertical Axis",
+      "distance_from_center": 1.0,
+      "quadrant": "Inner Ring",
+      "nearest_node": "Center",
+      "shedding": "Release horizontal seeking. Your path is vertical integration.",
+      "integrating": "Address scattered energy. Integrate depth with breadth.",
+      "grounding": "Move up and down. Let growth be dimensional."
+    },
+    {
+      "coordinate": [5, 7],
+      "name": "Source Flow",
+      "distance_from_center": 2.0,
+      "quadrant": "Upper-Center",
+      "nearest_node": "Domain Inner (Source)",
+      "shedding": "Release controlling the source. Your creativity must flow freely.",
+      "integrating": "Address creative constipation. Integrate release with refinement.",
+      "grounding": "Channel source energy. Let inspiration move through you."
+    },
+    {
+      "coordinate": [5, 8],
+      "name": "Sovereign Source",
+      "distance_from_center": 3.0,
+      "quadrant": "Upper-Center",
+      "nearest_node": "Domain Inner (Source)",
+      "shedding": "Release need for permission. Your authority is innate.",
+      "integrating": "Address isolation in sovereignty. Integrate mentorship with autonomy.",
+      "grounding": "Be your own authority. Let sovereignty include teachability."
+    },
+    {
+      "coordinate": [6, 1],
+      "name": "Structured Flow",
+      "distance_from_center": 4.12,
+      "quadrant": "Lower-Right",
+      "nearest_node": "Domain Outer (Resource)",
+      "shedding": "Release rigid planning. Your structures must allow spontaneity.",
+      "integrating": "Address control addiction. Integrate trust with organization.",
+      "grounding": "Plan loosely. Let structure serve flow, not prevent it."
+    },
+    {
+      "coordinate": [6, 2],
+      "name": "Resourceful Mind",
+      "distance_from_center": 3.16,
+      "quadrant": "Lower-Right",
+      "nearest_node": "Domain Outer (Resource)",
+      "shedding": "Release mental hoarding. Your knowledge must be shared.",
+      "integrating": "Address intellectual miserliness. Integrate generosity with wisdom.",
+      "grounding": "Teach what you know. Let learning circulate."
+    },
+    {
+      "coordinate": [6, 3],
+      "name": "Practical Idealism",
+      "distance_from_center": 2.24,
+      "quadrant": "Near Center",
+      "nearest_node": "Purpose Outer (Head)",
+      "shedding": "Release fantasy without action. Your ideals need manifestation.",
+      "integrating": "Address dreaminess. Integrate execution with vision.",
+      "grounding": "Act on ideals. Let visions become reality through work."
+    },
+    {
+      "coordinate": [6, 4],
+      "name": "Dynamic Stillness",
+      "distance_from_center": 1.41,
+      "quadrant": "Inner Ring",
+      "nearest_node": "Center",
+      "shedding": "Release agitation. Your movement must include rest.",
+      "integrating": "Address restlessness. Integrate stillness with dynamism.",
+      "grounding": "Move from stillness. Let action arise from peace."
+    },
+    {
+      "coordinate": [6, 6],
+      "name": "Balanced Tension",
+      "distance_from_center": 1.41,
+      "quadrant": "Inner Ring",
+      "nearest_node": "Center",
+      "shedding": "Release seeking resolution. Your tension is creative.",
+      "integrating": "Address discomfort avoidance. Integrate holding opposites.",
+      "grounding": "Sit in the middle. Let tension be generative, not destructive."
+    },
+    {
+      "coordinate": [6, 7],
+      "name": "Ordered Feeling",
+      "distance_from_center": 2.24,
+      "quadrant": "Upper-Right",
+      "nearest_node": "Order Inner (Parts)",
+      "shedding": "Release emotional chaos. Your feelings need tending.",
+      "integrating": "Address messy emotions. Integrate care with expression.",
+      "grounding": "Organize your inner world. Let feelings have structure."
+    },
+    {
+      "coordinate": [6, 8],
+      "name": "Creative Integrity",
+      "distance_from_center": 3.16,
+      "quadrant": "Upper-Right",
+      "nearest_node": "Domain Inner (Source)",
+      "shedding": "Release performative authenticity. Your truth doesn't need announcement.",
+      "integrating": "Address identity attachment. Integrate originality with experimentation.",
+      "grounding": "Be authentic unconsciously. Let truth be natural, not proclaimed."
+    },
+    {
+      "coordinate": [7, 2],
+      "name": "Ideological Foundation",
+      "distance_from_center": 3.61,
+      "quadrant": "Lower-Right",
+      "nearest_node": "Language Outer (Ideology)",
+      "shedding": "Release belief rigidity. Your ideology must evolve.",
+      "integrating": "Address dogmatism. Integrate flexibility with conviction.",
+      "grounding": "Hold beliefs lightly. Let truth update with experience."
+    },
+    {
+      "coordinate": [7, 3],
+      "name": "Conceptual Clarity",
+      "distance_from_center": 2.83,
+      "quadrant": "Lower-Right",
+      "nearest_node": "Purpose Outer (Head)",
+      "shedding": "Release mental complexity. Your ideas need simplification.",
+      "integrating": "Address over-intellectualization. Integrate clarity with nuance.",
+      "grounding": "Think clearly. Let concepts serve communication, not obscure it."
+    },
+    {
+      "coordinate": [7, 4],
+      "name": "Purposeful Direction",
+      "distance_from_center": 2.24,
+      "quadrant": "Near Center",
+      "nearest_node": "Purpose Outer (Head)",
+      "shedding": "Release aimless wandering. Your direction must clarify.",
+      "integrating": "Address purposeless drift. Integrate intention with openness.",
+      "grounding": "Choose direction. Let purpose guide without rigidity."
+    },
+    {
+      "coordinate": [7, 5],
+      "name": "Horizontal Expansion",
+      "distance_from_center": 2.0,
+      "quadrant": "Near Center",
+      "nearest_node": "Identity Outer (Reason)",
+      "shedding": "Release vertical obsession. Your growth includes breadth.",
+      "integrating": "Address hierarchical thinking. Integrate lateral with vertical.",
+      "grounding": "Expand sideways. Let growth be multi-directional."
+    },
+    {
+      "coordinate": [7, 6],
+      "name": "Reasoned Care",
+      "distance_from_center": 2.24,
+      "quadrant": "Near Center",
+      "nearest_node": "Order Inner (Parts)",
+      "shedding": "Release cold logic. Your reason must include compassion.",
+      "integrating": "Address heartless thinking. Integrate warmth with clarity.",
+      "grounding": "Think with care. Let logic serve love."
+    },
+    {
+      "coordinate": [7, 7],
+      "name": "Ordered Heart",
+      "distance_from_center": 2.83,
+      "quadrant": "Upper-Right",
+      "nearest_node": "Order Inner (Parts)",
+      "shedding": "Release chaotic passion. Your heart needs structure.",
+      "integrating": "Address emotional disorganization. Integrate discipline with feeling.",
+      "grounding": "Love with order. Let passion have form."
+    },
+    {
+      "coordinate": [7, 8],
+      "name": "Heartful Order",
+      "distance_from_center": 3.61,
+      "quadrant": "Upper-Right",
+      "nearest_node": "Purpose Inner (Heart)",
+      "shedding": "Release enabling systems. Your compassion must include boundaries.",
+      "integrating": "Address boundaryless care. Integrate limits with love.",
+      "grounding": "Love through boundaries. Let care include consequences."
+    },
+    {
+      "coordinate": [8, 1],
+      "name": "Belief Structure",
+      "distance_from_center": 5.0,
+      "quadrant": "Lower-Right",
+      "nearest_node": "Language Outer (Ideology)",
+      "shedding": "Release ideological prison. Your beliefs must liberate, not trap.",
+      "integrating": "Address mental rigidity. Integrate flexibility with faith.",
+      "grounding": "Build living beliefs. Let ideology evolve with you."
+    },
+    {
+      "coordinate": [8, 2],
+      "name": "Strategic Truth",
+      "distance_from_center": 4.24,
+      "quadrant": "Lower-Right",
+      "nearest_node": "Language Outer (Ideology)",
+      "shedding": "Release manipulative honesty. Your truth must be unconditional.",
+      "integrating": "Address calculated authenticity. Integrate spontaneity with integrity.",
+      "grounding": "Speak truth naturally. Let honesty be reflexive, not strategic."
+    },
+    {
+      "coordinate": [8, 3],
+      "name": "Hidden Wisdom",
+      "distance_from_center": 3.61,
+      "quadrant": "Right-Center",
+      "nearest_node": "Experience Outer (Unseen)",
+      "shedding": "Release occult hoarding. Your hidden knowledge must surface.",
+      "integrating": "Address secrecy addiction. Integrate revelation with mystery.",
+      "grounding": "Share hidden wisdom. Let secrets serve, not isolate."
+    },
+    {
+      "coordinate": [8, 4],
+      "name": "Transformed Reason",
+      "distance_from_center": 3.16,
+      "quadrant": "Right-Center",
+      "nearest_node": "Identity Outer (Reason)",
+      "shedding": "Release rigid rationality. Your logic must allow magic.",
+      "integrating": "Address closed-mindedness. Integrate wonder with reason.",
+      "grounding": "Think beyond the rational. Let logic include mystery."
+    },
+    {
+      "coordinate": [8, 5],
+      "name": "Reasoned Partnership",
+      "distance_from_center": 3.0,
+      "quadrant": "Right-Center",
+      "nearest_node": "Identity Outer (Reason)",
+      "shedding": "Release transactional relating. Your partnerships must transcend logic.",
+      "integrating": "Address calculated connection. Integrate devotion with discernment.",
+      "grounding": "Relate beyond reason. Let partnership include the irrational."
+    },
+    {
+      "coordinate": [8, 6],
+      "name": "Precise Intuition",
+      "distance_from_center": 3.16,
+      "quadrant": "Right-Upper",
+      "nearest_node": "Order Inner (Parts)",
+      "shedding": "Release vague sensing. Your intuition needs articulation.",
+      "integrating": "Address undefined knowing. Integrate clarity with subtlety.",
+      "grounding": "Name your knowing. Let intuition become precise."
+    },
+    {
+      "coordinate": [8, 7],
+      "name": "Detailed Care",
+      "distance_from_center": 3.61,
+      "quadrant": "Upper-Right",
+      "nearest_node": "Order Inner (Parts)",
+      "shedding": "Release losing self in service. Your care must include self-care.",
+      "integrating": "Address martyrdom. Integrate self-love with service.",
+      "grounding": "Serve sustainably. Let care flow in all directions."
+    },
+    {
+      "coordinate": [8, 8],
+      "name": "Detailed Devotion",
+      "distance_from_center": 4.24,
+      "quadrant": "Upper-Right",
+      "nearest_node": "Order Inner (Parts)",
+      "shedding": "Release micro-management of love. Your devotion need not control.",
+      "integrating": "Address perfectionist caring. Integrate trust with attentiveness.",
+      "grounding": "Love without fixing. Let care allow imperfection."
+    },
+    {
+      "coordinate": [8, 9],
+      "name": "Ecstatic Precision",
+      "distance_from_center": 4.47,
+      "quadrant": "Upper-Right",
+      "nearest_node": "Purpose Inner (Heart)",
+      "shedding": "Release joyless perfection. Your precision must delight.",
+      "integrating": "Address grim mastery. Integrate playfulness with craft.",
+      "grounding": "Find joy in details. Let mastery be ecstatic."
+    },
+    {
+      "coordinate": [9, 1],
+      "name": "Absolute Ideology",
+      "distance_from_center": 5.66,
+      "quadrant": "Lower-Right Corner",
+      "nearest_node": "Language Outer (Ideology)",
+      "shedding": "Release fundamentalism. Your conviction must allow doubt.",
+      "integrating": "Address zealotry. Integrate humility with faith.",
+      "grounding": "Believe with openness. Let ideology remain permeable."
+    },
+    {
+      "coordinate": [9, 2],
+      "name": "Revealed Mystery",
+      "distance_from_center": 5.0,
+      "quadrant": "Lower-Right",
+      "nearest_node": "Experience Outer (Unseen)",
+      "shedding": "Release exposure addiction. Your mysteries need protection.",
+      "integrating": "Address compulsive revelation. Integrate discretion with transparency.",
+      "grounding": "Guard some secrets. Let not everything be revealed."
+    },
+    {
+      "coordinate": [9, 4],
+      "name": "Partnered Solitude",
+      "distance_from_center": 4.12,
+      "quadrant": "Right Edge",
+      "nearest_node": "Identity Outer (Reason)",
+      "shedding": "Release codependent independence. Your autonomy must allow intimacy.",
+      "integrating": "Address avoidant attachment. Integrate connection with freedom.",
+      "grounding": "Be together and apart. Let relationship include solitude."
+    },
+    {
+      "coordinate": [9, 6],
+      "name": "Systematic Intuition",
+      "distance_from_center": 4.12,
+      "quadrant": "Right-Upper",
+      "nearest_node": "Order Inner (Parts)",
+      "shedding": "Release over-trusting systems. Your organization must include spontaneity.",
+      "integrating": "Address rigid structuring. Integrate chaos with order.",
+      "grounding": "Organize flexibly. Let systems adapt to life."
+    },
+    {
+      "coordinate": [9, 8],
+      "name": "Analytical Intuition",
+      "distance_from_center": 5.0,
+      "quadrant": "Upper-Right",
+      "nearest_node": "Order Inner (Parts)",
+      "shedding": "Release dissecting everything. Your analysis must allow wholes.",
+      "integrating": "Address reductionism. Integrate synthesis with analysis.",
+      "grounding": "Analyze to serve wholeness. Let parts point to unity."
+    },
+    {
+      "coordinate": [9, 9],
+      "name": "Perfected Parts",
+      "distance_from_center": 5.66,
+      "quadrant": "Upper-Right Corner",
+      "nearest_node": "Order Inner (Parts)",
+      "shedding": "Release perfection obsession. Your mastery must include error.",
+      "integrating": "Address intolerance of flaw. Integrate imperfection with excellence.",
+      "grounding": "Make peace with flaws. Let excellence include humanity."
+    }
+  ]
+}

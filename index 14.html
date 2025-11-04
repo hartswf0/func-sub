@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Training Grounds · Node Explorer</title>
+<style>
+  /* --- STARK MATRIX THEME --- */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  :root {
+    --bg: #ffffff;
+    --ink: #0e0e0e;
+    --border: #0e0e0e;
+    --muted: #5a5a5a;
+    --accent: #ff4d2e;
+    --panel: #ffffff;
+    --font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  
+  body {
+    font-family: var(--font-family);
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+  
+  header {
+    background: var(--panel);
+    border-bottom: 2px solid var(--border);
+    padding: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  
+  h1 {
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  
+  .subtitle {
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  
+  .mode-tabs {
+    display: flex;
+    gap: 0;
+    padding: 0;
+    background: var(--bg);
+    border-bottom: 2px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .mode-tab {
+    flex-grow: 1;
+    text-align: center;
+    padding: 12px 10px;
+    background: var(--panel);
+    border: none;
+    border-right: 2px solid var(--border);
+    border-left: 2px solid var(--border);
+    border-radius: 0;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.1s, color 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    margin: 0 -1px;
+    position: relative;
+  }
+
+  .mode-tab:first-child {
+    border-left: none;
+    margin-left: 0;
+  }
+  .mode-tab:last-child {
+    border-right: none;
+    margin-right: 0;
+  }
+  
+  .mode-tab.active {
+    background: var(--ink);
+    color: white;
+    border-color: var(--ink);
+  }
+
+  .mode-tab:not(.active):hover {
+    background: #f0f0f0;
+  }
+  
+  .list-container, .grid-container {
+    padding: 16px;
+    display: none;
+  }
+  .list-container.active, .grid-container.active { display: block; }
+  
+  .stats {
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 0;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 16px;
+  }
+  
+  .stat-value {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--ink);
+  }
+  
+  .stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  
+  .search-box {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--border);
+    border-radius: 0;
+    font-size: 14px;
+    margin-bottom: 16px;
+    background: var(--panel);
+    font-family: var(--font-family);
+  }
+  
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  
+  .filter-btn {
+    padding: 8px 16px;
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 0;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-family);
+  }
+  
+  .filter-btn.active {
+    background: var(--ink);
+    color: white;
+    border-color: var(--ink);
+  }
+  
+  .node-card {
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 0;
+    padding: 16px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .node-card:hover {
+    transform: translateY(-1px);
+  }
+  
+  .node-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  
+  .node-name {
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+  }
+  
+  .node-coord {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    font-family: 'Courier New', monospace;
+  }
+  
+  .node-meta {
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  .node-operations {
+    margin-top: 12px;
+    padding-top: 12px;
+    display: none;
+  }
+  
+  .node-card.expanded .node-operations {
+    display: block;
+    border-top: 2px solid var(--border);
+  }
+  
+  .operation {
+    margin-bottom: 12px;
+  }
+  
+  .operation:last-child {
+    margin-bottom: 0;
+  }
+  
+  .op-title {
+    margin-bottom: 6px;
+  }
+  
+  .op-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 0;
+  }
+  
+  .op-badge.shed { background: var(--ink); color: white; }
+  .op-badge.integrate { background: var(--ink); color: white; }
+  .op-badge.ground { background: var(--ink); color: white; }
+  
+  .op-text {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  
+  .grid-9x9 {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 4px;
+    margin-bottom: 20px;
+  }
+  
+  .grid-cell {
+    aspect-ratio: 1;
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  
+  .grid-cell.has-node {
+    background: var(--ink);
+    color: white;
+    border-color: var(--ink);
+  }
+  
+  .grid-cell.synthetic {
+    background: #f0f0f0;
+    border-color: var(--border);
+  }
+  
+  .grid-cell:hover {
+    transform: scale(1.05);
+  }
+  
+  #matrixMode {
+    padding: 0;
+  }
+
+  .matrix-section {
+    border: 2px solid var(--border);
+    margin: -2px 0 0 -2px;
+    background-color: var(--bg);
+  }
+
+  .matrix-title {
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 12px 16px;
+    border-bottom: 2px solid var(--border);
+    line-height: 1;
+  }
+
+  .matrix-description {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 16px;
+  }
+  
+  .matrix-content {
+    display: flex;
+    border-bottom: 2px solid var(--border);
+  }
+  .matrix-section:last-child .matrix-content {
+    border-bottom: none;
+  }
+
+  .matrix-identity {
+    flex-shrink: 0;
+    width: 25%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    padding: 16px 8px;
+    text-align: center;
+    border-right: 2px solid var(--border);
+    font-size: 12px;
+    line-height: 1.1;
+  }
+  .matrix-identity .label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    word-wrap: break-word;
+  }
+  .matrix-identity .time {
+    font-size: 14px;
+    font-weight: 900;
+    margin-top: 8px;
+  }
+
+  .matrix-components {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .matrix-component {
+    padding: 16px;
+  }
+  .matrix-component:first-child {
+    border-bottom: 2px solid var(--border);
+  }
+
+  .component-title {
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .component-title .polarity {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    float: right;
+  }
+
+  .component-detail {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .component-bullet {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+    display: block;
+    line-height: 1.4;
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 200;
+    padding: 20px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .modal.active { 
+    display: flex; 
+    justify-content: center;
+    align-items: center; 
+  }
+  
+  .modal-content {
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 0;
+    padding: 24px;
+    margin: auto;
+    max-width: 500px;
+    width: 100%;
+    position: relative;
+  }
+  
+  .modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    font-weight: 900;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+  }
+  
+  .empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 600px) {
+    .matrix-identity {
+      width: 30%;
+    }
+    .matrix-identity .label {
+      letter-spacing: 0.2em;
+      font-size: 9px;
+    }
+    .modal-content {
+      margin: 20px;
+    }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Training Grounds</h1>
+    <div class="subtitle">Node Explorer · S/I/G Framework</div>
+  </header>
+  
+  <div class="mode-tabs">
+    <button class="mode-tab active" data-mode="matrix">Matrix</button>
+    <button class="mode-tab" data-mode="list">📋 List</button>
+    <button class="mode-tab" data-mode="grid">🗺️ Grid</button>
+  </div>
+  
+  <div class="list-container active" id="matrixMode">
+    <!-- Matrix sections will be dynamically generated -->
+  </div>
+  
+  <div class="list-container" id="listMode">
+    <div class="stats">
+      <div class="stats-grid">
+        <div>
+          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-label">Total Nodes</div>
+        </div>
+        <div>
+          <div class="stat-value" id="statKnown">0</div>
+          <div class="stat-label">Known</div>
+        </div>
+        <div>
+          <div class="stat-value" id="statSynth">0</div>
+          <div class="stat-label">Synthetic</div>
+        </div>
+      </div>
+    </div>
+    
+    <input type="text" class="search-box" id="searchBox" placeholder="Search nodes by name or coordinate...">
+    
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="known">Known</button>
+      <button class="filter-btn" data-filter="synthetic">Synthetic</button>
+      <button class="filter-btn" data-filter="Identity">Identity</button>
+      <button class="filter-btn" data-filter="Experience">Experience</button>
+      <button class="filter-btn" data-filter="Language">Language</button>
+      <button class="filter-btn" data-filter="Domain">Domain</button>
+      <button class="filter-btn" data-filter="Purpose">Purpose</button>
+      <button class="filter-btn" data-filter="Order">Order</button>
+    </div>
+    
+    <div id="nodeList"></div>
+  </div>
+  
+  <div class="grid-container" id="gridMode">
+    <div class="stats">
+      <div class="stats-grid">
+        <div>
+          <div class="stat-value">9×9</div>
+          <div class="stat-label">Coordinate Grid</div>
+        </div>
+        <div>
+          <div class="stat-value" id="gridStatKnown">0</div>
+          <div class="stat-label">Known Nodes</div>
+        </div>
+        <div>
+          <div class="stat-value" id="gridStatSynth">0</div>
+          <div class="stat-label">Synthetic</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="grid-9x9" id="grid9x9"></div>
+  </div>
+  
+  <div class="modal" id="nodeModal">
+    <div class="modal-content" id="modalContent">
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+  </div>
+
+<script>
+const DATA = {
+  stages: [
+    { id: 'SHED', name: 'SHED', description: 'Remove excess · discard non-essential', phase: 'T-1 PAST' },
+    { id: 'INTEGRATE', name: 'INTEGRATE', description: 'Connect parts into patterns', phase: 'T0 PRESENT' },
+    { id: 'GROUND', name: 'GROUND', description: 'Stabilize patterns into order', phase: 'T+1 NEXT' }
+  ],
+  axes: [
+    { id: 1, name: 'Identity', inner: 'Instinct', outer: 'Reason' },
+    { id: 2, name: 'Experience', inner: 'Seen', outer: 'Unseen' },
+    { id: 3, name: 'Language', inner: 'Ideas', outer: 'Ideologies' },
+    { id: 4, name: 'Domain', inner: 'Source', outer: 'Whole' },
+    { id: 5, name: 'Purpose', inner: 'Heart', outer: 'Head' },
+    { id: 6, name: 'Order', inner: 'Parts', outer: 'Whole' }
+  ],
+  operations: {
+    SHED: {
+      Identity: {
+        INNER: { action: 'Eliminate Current Emotional Noise', target: 'Noise In Immediate Preference' },
+        OUTER: { action: 'Decommission Current Unused Formalisms', target: 'Current Structural Excess' }
+      },
+      Experience: {
+        INNER: { action: 'Reduce Current Sensory Noise', target: 'Ephemeral Phenomena' },
+        OUTER: { action: 'Reject Hidden Redundancy', target: 'Non-Essential Inferences' }
+      },
+      Language: {
+        INNER: { action: 'Sharpen Units Of Current Meaning', target: 'Unnecessary Ideas' },
+        OUTER: { action: 'Dismantle Current Group Ideology', target: 'Obsolete Guiding System' }
+      },
+      Domain: {
+        INNER: { action: 'Cultivate New Origin Points', target: 'Current Source Dependence' },
+        OUTER: { action: 'Discard Unnecessary Action Assets', target: 'Current Inventory Excess' }
+      },
+      Purpose: {
+        INNER: { action: 'Purify Current Emotional Drive', target: 'Emotional Drive' },
+        OUTER: { action: 'De-Clutter Current Strategic Noise', target: 'Strategic Noise' }
+      },
+      Order: {
+        INNER: { action: 'Isolate Redundant Current Parts', target: 'Individual Components' },
+        OUTER: { action: 'Restructure Current Systemic Arrangement', target: 'Obsolete Structure' }
+      }
+    },
+    INTEGRATE: {
+      Identity: {
+        INNER: { action: 'Align Instinct to Conscious Goals', target: 'Directional Clarity' },
+        OUTER: { action: 'Link Reason to External Feedback', target: 'Environmental Input' }
+      },
+      Experience: {
+        INNER: { action: 'Map Seen to Underlying Structure', target: 'Unseen Dynamics' },
+        OUTER: { action: 'Verify Unseen to Current Seen Phenomena', target: 'Real-Time Evidence' }
+      },
+      Language: {
+        INNER: { action: 'Synthesize Ideas to Coherent Patterns', target: 'Systematic Meaning' },
+        OUTER: { action: 'Connect New Ideas to Guiding Narrative', target: 'System Cohesion' }
+      },
+      Domain: {
+        INNER: { action: 'Establish Source to Resource Flow', target: 'Usable Assets' },
+        OUTER: { action: 'Optimize Resource to Goal Vector', target: 'Purposeful Action' }
+      },
+      Purpose: {
+        INNER: { action: 'Harmonize Heart to Head Clarity', target: 'Cognitive System' },
+        OUTER: { action: 'Adjust Head to Heart Direction', target: 'Emotional Alignment' }
+      },
+      Order: {
+        INNER: { action: 'Combine Parts to Coherent Whole', target: 'System Assembly' },
+        OUTER: { action: 'Integrate Whole to New Patterns', target: 'Constituent Parts' }
+      }
+    },
+    GROUND: {
+      Identity: {
+        INNER: { action: 'Commit Core Value to Present Action', target: 'Stable Instinct' },
+        OUTER: { action: 'Formalize Principle Into Present Use', target: 'Structural Logic' }
+      },
+      Experience: {
+        INNER: { action: 'Apply Observation Protocol to Present', target: 'Current Senses' },
+        OUTER: { action: 'Standardize Inference Method', target: 'Stable Inference' }
+      },
+      Language: {
+        INNER: { action: 'Document Concept For Present Use', target: 'Fixed Vocabulary' },
+        OUTER: { action: 'Formalize Narrative Into Shared Beliefs', target: 'Current Shared Beliefs' }
+      },
+      Domain: {
+        INNER: { action: 'Sustain Source For Present Use', target: 'Perpetual Origin' },
+        OUTER: { action: 'Secure Asset Base For Present', target: 'Fixed Assets' }
+      },
+      Purpose: {
+        INNER: { action: 'Execute Chosen Goal With Full Commit', target: 'Affective Center' },
+        OUTER: { action: 'Implement Strategy Into Formal Plan', target: 'Cognitive Plan' }
+      },
+      Order: {
+        INNER: { action: 'Stabilize Arrangement Into Fixed State', target: 'Fixed Components' },
+        OUTER: { action: 'Institutionalize Order Into Function', target: 'Functioning System' }
+      }
+    }
+  }
+};
+
+const knownNodes = [
+  { name: 'Identity Anchor', coordinate: [5, 5], axis: 'Identity', polarity: 'Center' },
+  { name: 'Language Nexus', coordinate: [2, 8], axis: 'Language', polarity: 'OUTER' },
+  { name: 'Domain Root', coordinate: [8, 2], axis: 'Domain', polarity: 'INNER' },
+  { name: 'Purpose Vector', coordinate: [3, 7], axis: 'Purpose', polarity: 'INNER' },
+  { name: 'Order Frame', coordinate: [7, 3], axis: 'Order', polarity: 'OUTER' }
+];
+
+let allNodes = [];
+let currentFilter = 'all';
+let currentMode = 'matrix';
+
+function initializeNodes() {
+  allNodes = [...knownNodes.map(n => ({...n, type: 'known'}))].map(node => {
+    const ops = {};
+    if (node.axis) {
+      ops.shedding = DATA.operations.SHED[node.axis] ? DATA.operations.SHED[node.axis][node.polarity === 'INNER' || node.polarity === 'Center' ? 'INNER' : 'OUTER'].action : 'N/A';
+      ops.integrating = DATA.operations.INTEGRATE[node.axis] ? DATA.operations.INTEGRATE[node.axis][node.polarity === 'INNER' || node.polarity === 'Center' ? 'INNER' : 'OUTER'].action : 'N/A';
+      ops.grounding = DATA.operations.GROUND[node.axis] ? DATA.operations.GROUND[node.axis][node.polarity === 'INNER' || node.polarity === 'Center' ? 'INNER' : 'OUTER'].action : 'N/A';
+    }
+    return {...node, ...ops};
+  });
+  
+  let count = 0;
+  for (let r = 1; r <= 9; r++) {
+    for (let c = 1; c <= 9; c++) {
+      if (!allNodes.some(n => n.coordinate[0] === r && n.coordinate[1] === c)) {
+        allNodes.push({
+          name: `Synthetic Node ${++count}`,
+          coordinate: [r, c],
+          type: 'synthetic',
+          axis: null,
+          polarity: 'N/A',
+          distance_from_center: Math.round(Math.sqrt(Math.pow(r-5, 2) + Math.pow(c-5, 2)) * 10) / 10,
+          shedding: 'Placeholder for discarding non-essential data.',
+          integrating: 'Placeholder for connecting data points.',
+          grounding: 'Placeholder for stabilizing patterns.'
+        });
+      }
+    }
+  }
+  
+  allNodes.sort((a, b) => {
+    if (a.coordinate[0] !== b.coordinate[0]) return a.coordinate[0] - b.coordinate[0];
+    return a.coordinate[1] - b.coordinate[1];
+  });
+}
+
+function renderMatrix() {
+  const container = document.getElementById('matrixMode');
+  container.innerHTML = '';
+  
+  DATA.stages.forEach(stage => {
+    const sectionDiv = document.createElement('div');
+    sectionDiv.className = 'matrix-section';
+    
+    sectionDiv.innerHTML = `
+      <div class="matrix-title">${stage.name}</div>
+      <div class="matrix-description">${stage.description}</div>
+    `;
+    
+    DATA.axes.forEach(axis => {
+      const ops = DATA.operations[stage.id][axis.name];
+      
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'matrix-content';
+      contentDiv.innerHTML = `
+        <div class="matrix-identity">
+          <div class="label">${axis.name.toUpperCase()}</div>
+          <div class="time">${stage.phase}</div>
+        </div>
+        <div class="matrix-components">
+          <div class="matrix-component">
+            <div class="component-title">
+              ${axis.inner.toUpperCase()} <span class="polarity">INNER</span>
+            </div>
+            <div class="component-detail">
+              ${ops.INNER.action}
+              <span class="component-bullet">⊙ ${ops.INNER.target}</span>
+            </div>
+          </div>
+          <div class="matrix-component">
+            <div class="component-title">
+              ${axis.outer.toUpperCase()} <span class="polarity">OUTER</span>
+            </div>
+            <div class="component-detail">
+              ${ops.OUTER.action}
+              <span class="component-bullet">⊙ ${ops.OUTER.target}</span>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      sectionDiv.appendChild(contentDiv);
+    });
+    
+    container.appendChild(sectionDiv);
+  });
+}
+
+function updateStats() {
+  const knownCount = allNodes.filter(n => n.type === 'known').length;
+  const synthCount = allNodes.filter(n => n.type === 'synthetic').length;
+  const totalCount = allNodes.length;
+
+  document.getElementById('statTotal').textContent = totalCount;
+  document.getElementById('statKnown').textContent = knownCount;
+  document.getElementById('statSynth').textContent = synthCount;
+  document.getElementById('gridStatKnown').textContent = knownCount;
+  document.getElementById('gridStatSynth').textContent = synthCount;
+}
+
+function renderList() {
+  const container = document.getElementById('nodeList');
+  const filtered = filterNodes();
+  
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">🔍</div>
+        <div>No nodes match your filter</div>
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = filtered.map(node => `
+    <div class="node-card" data-coord="${node.coordinate[0]},${node.coordinate[1]}">
+      <div class="node-header">
+        <div class="node-name">${node.name}</div>
+        <div class="node-coord">[${node.coordinate[0]},${node.coordinate[1]}]</div>
+      </div>
+      <div class="node-meta">
+        <span>${node.type === 'known' ? '⭐ KNOWN' : '🔹 SYNTHETIC'}</span>
+        ${node.axis ? `<span>• ${node.axis.toUpperCase()}</span>` : ''}
+        ${node.polarity ? `<span>• ${node.polarity.toUpperCase()}</span>` : ''}
+        ${node.distance_from_center ? `<span>• D=${node.distance_from_center}</span>` : ''}
+      </div>
+      <div class="node-operations">
+        <div class="operation">
+          <div class="op-title">
+            <span class="op-badge shed">SHED</span>
+          </div>
+          <div class="op-text">${node.shedding || 'N/A'}</div>
+        </div>
+        <div class="operation">
+          <div class="op-title">
+            <span class="op-badge integrate">INTEGRATE</span>
+          </div>
+          <div class="op-text">${node.integrating || 'N/A'}</div>
+        </div>
+        <div class="operation">
+          <div class="op-title">
+            <span class="op-badge ground">GROUND</span>
+          </div>
+          <div class="op-text">${node.grounding || 'N/A'}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  
+  document.querySelectorAll('.node-card').forEach(card => {
+    card.addEventListener('click', () => {
+      card.classList.toggle('expanded');
+    });
+  });
+}
+
+function renderGrid() {
+  const container = document.getElementById('grid9x9');
+  container.innerHTML = '';
+  
+  for (let row = 1; row <= 9; row++) {
+    for (let col = 1; col <= 9; col++) {
+      const node = allNodes.find(n => n.coordinate[0] === row && n.coordinate[1] === col);
+      const cell = document.createElement('div');
+      cell.className = 'grid-cell';
+      
+      if (node) {
+        cell.classList.add(node.type === 'known' ? 'has-node' : 'synthetic');
+        cell.textContent = node.type === 'known' ? '⭐' : '•';
+        cell.dataset.coord = `${row},${col}`;
+        cell.addEventListener('click', () => showModal(node));
+      } else {
+        cell.textContent = `${row},${col}`;
+      }
+      
+      container.appendChild(cell);
+    }
+  }
+}
+
+function filterNodes() {
+  const searchTerm = document.getElementById('searchBox')?.value.toLowerCase() || '';
+  
+  return allNodes.filter(node => {
+    if (currentFilter === 'known' && node.type !== 'known') return false;
+    if (currentFilter === 'synthetic' && node.type !== 'synthetic') return false;
+    if (currentFilter !== 'all' && currentFilter !== 'known' && currentFilter !== 'synthetic') {
+      if (node.axis !== currentFilter) return false;
+    }
+    
+    if (searchTerm) {
+      const coordStr = `${node.coordinate[0]},${node.coordinate[1]}`;
+      return node.name.toLowerCase().includes(searchTerm) ||
+             coordStr.includes(searchTerm) ||
+             (node.axis && node.axis.toLowerCase().includes(searchTerm));
+    }
+    
+    return true;
+  });
+}
+
+function showModal(node) {
+  const modal = document.getElementById('nodeModal');
+  const content = document.getElementById('modalContent');
+  
+  content.innerHTML = `
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div style="padding-right: 40px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+        <h2 style="font-size: 20px; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase;">${node.name}</h2>
+        <div style="font-size: 14px; font-weight: 700; color: var(--ink); font-family: 'Courier New', monospace;">
+          [${node.coordinate[0]},${node.coordinate[1]}]
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 12px; margin-bottom: 20px; font-size: 12px; color: var(--muted); flex-wrap: wrap; border-bottom: 2px solid var(--border); padding-bottom: 16px;">
+        <span style="font-weight: 800;">${node.type === 'known' ? '⭐ KNOWN NODE' : '🔹 SYNTHETIC NODE'}</span>
+        ${node.axis ? `<span>• ${node.axis.toUpperCase()}</span>` : ''}
+        ${node.polarity ? `<span>• ${node.polarity.toUpperCase()}</span>` : ''}
+        ${node.distance_from_center ? `<span>• DISTANCE: ${node.distance_from_center}</span>` : ''}
+      </div>
+      
+      <div style="padding-top: 20px;">
+        <div style="margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span class="op-badge shed">SHED</span>
+            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);">Purification</span>
+          </div>
+          <div style="font-size: 14px; line-height: 1.6;">${node.shedding || 'N/A'}</div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span class="op-badge integrate">INTEGRATE</span>
+            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);">Synthesis</span>
+          </div>
+          <div style="font-size: 14px; line-height: 1.6;">${node.integrating || 'N/A'}</div>
+        </div>
+        
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span class="op-badge ground">GROUND</span>
+            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);">Commitment</span>
+          </div>
+          <div style="font-size: 14px; line-height: 1.6;">${node.grounding || 'N/A'}</div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  modal.classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('nodeModal').classList.remove('active');
+}
+
+window.closeModal = closeModal;
+
+document.querySelectorAll('.mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    currentMode = tab.dataset.mode;
+    
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    
+    document.getElementById('listMode').classList.remove('active');
+    document.getElementById('gridMode').classList.remove('active');
+    document.getElementById('matrixMode').classList.remove('active');
+    
+    if (currentMode === 'list') document.getElementById('listMode').classList.add('active');
+    if (currentMode === 'grid') document.getElementById('gridMode').classList.add('active');
+    if (currentMode === 'matrix') document.getElementById('matrixMode').classList.add('active');
+  });
+});
+
+document.querySelectorAll('[data-filter]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentFilter = btn.dataset.filter;
+    document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderList();
+  });
+});
+
+document.getElementById('searchBox').addEventListener('input', () => {
+  renderList();
+});
+
+document.getElementById('nodeModal').addEventListener('click', (e) => {
+  if (e.target.id === 'nodeModal') {
+    closeModal();
+  }
+});
+
+initializeNodes();
+renderMatrix();
+updateStats();
+renderList();
+renderGrid();
+</script>
+</body>
+</html>

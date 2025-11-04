@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FUNC-SUB Index — Functional Substrate</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #e8e4dc;
+            color: #1a1a1a;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #f5f3ed;
+            border: 3px solid #1a1a1a;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: bold;
+            letter-spacing: 8px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            letter-spacing: 3px;
+            color: #666;
+        }
+
+        .section {
+            background: #f5f3ed;
+            border: 3px solid #1a1a1a;
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 6px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #1a1a1a;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .card {
+            background: #e8e4dc;
+            border: 3px solid #1a1a1a;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: #1a1a1a;
+            display: block;
+        }
+
+        .card:hover {
+            background: #fff;
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0 #1a1a1a;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .card-desc {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .card-label {
+            display: inline-block;
+            background: #1a1a1a;
+            color: #e8e4dc;
+            padding: 2px 8px;
+            font-size: 9px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-top: 8px;
+        }
+
+        .preview-frame {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .preview-frame.active {
+            display: flex;
+        }
+
+        .preview-container {
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            border: 4px solid #1a1a1a;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-header {
+            background: #1a1a1a;
+            color: #e8e4dc;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .preview-title {
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .close-btn {
+            background: #e8e4dc;
+            color: #1a1a1a;
+            border: 2px solid #e8e4dc;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 14px;
+            letter-spacing: 2px;
+        }
+
+        .close-btn:hover {
+            background: #fff;
+        }
+
+        .preview-iframe {
+            flex: 1;
+            border: none;
+            width: 100%;
+        }
+
+        .corner-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #1a1a1a;
+            color: #e8e4dc;
+            padding: 10px 20px;
+            border: 3px solid #1a1a1a;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            z-index: 100;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 32px;
+                letter-spacing: 4px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .preview-frame {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="corner-badge">FUNC-SUB v1.0</div>
+
+    <div class="container">
+        <header>
+            <h1>FUNC-SUB</h1>
+            <div class="subtitle">FUNCTIONAL SUBSTRATE — TRAINING GROUND INDEX</div>
+        </header>
+
+        <!-- PRIMARY APPLICATIONS -->
+        <div class="section">
+            <div class="section-title">🎮 PRIMARY APPLICATIONS</div>
+            <div class="grid">
+                <a class="card" onclick="openPreview('func-orb-training.html', 'Orbital Training Ground'); return false;">
+                    <div class="card-title">ORBITAL TRAINING</div>
+                    <div class="card-desc">Interactive 3D training ground with character movement, grid navigation, and node placement. Move with arrow keys, chat with axes.</div>
+                    <div class="card-label">PRIMARY</div>
+                </a>
+
+                <a class="card" onclick="openPreview('shed-frame.html', 'SHED Framework Sheet'); return false;">
+                    <div class="card-title">SHED FRAMEWORK</div>
+                    <div class="card-desc">Clean Bauhaus study interface. Read all 36 operations across 6 axes, 3 phases, 2 polarities. Print-friendly.</div>
+                    <div class="card-label">STUDY</div>
+                </a>
+
+                <a class="card" onclick="openPreview('node-dataset-viewer.html', 'Node Dataset Viewer'); return false;">
+                    <div class="card-title">NODE DATASET VIEWER</div>
+                    <div class="card-desc">3-panel view (Inner/Observer/Outer) with hexagon radar overlays. Explore 12 known nodes + 69 synthetic nodes on 9×9 grid.</div>
+                    <div class="card-label">EXPLORER</div>
+                </a>
+
+                <a class="card" onclick="openPreview('integrated-node-viewer.html', 'Integrated Node Viewer'); return false;">
+                    <div class="card-title">INTEGRATED VIEWER</div>
+                    <div class="card-desc">Combined node exploration with enhanced radar visualization and grid interaction.</div>
+                    <div class="card-label">INTEGRATED</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- VARIATIONS & EXPERIMENTS -->
+        <div class="section">
+            <div class="section-title">🔬 VARIATIONS & EXPERIMENTS</div>
+            <div class="grid">
+                <a class="card" onclick="openPreview('func-orb-centaur.html', 'Centaur Mode'); return false;">
+                    <div class="card-title">CENTAUR MODE</div>
+                    <div class="card-desc">3-channel view: Inner, Outer, Observer scenes running simultaneously with shared state.</div>
+                    <div class="card-label">ADVANCED</div>
+                </a>
+
+                <a class="card" onclick="openPreview('func-orb.html', 'Original Orb'); return false;">
+                    <div class="card-title">ORIGINAL ORB</div>
+                    <div class="card-desc">Early orbital interface prototype.</div>
+                    <div class="card-label">LEGACY</div>
+                </a>
+
+                <a class="card" onclick="openPreview('tra.html', 'Bauhaus Sheet'); return false;">
+                    <div class="card-title">TRA BAUHAUS</div>
+                    <div class="card-desc">Static Bauhaus poster layout of training operations.</div>
+                    <div class="card-label">POSTER</div>
+                </a>
+
+                <a class="card" onclick="openPreview('tra-grid-3d.html', 'TRA Grid 3D'); return false;">
+                    <div class="card-title">TRA GRID 3D</div>
+                    <div class="card-desc">3D grid visualization experiment.</div>
+                    <div class="card-label">EXPERIMENT</div>
+                </a>
+
+                <a class="card" onclick="openPreview('tra-mobile-nodes.html', 'TRA Mobile Nodes'); return false;">
+                    <div class="card-title">TRA MOBILE NODES</div>
+                    <div class="card-desc">Mobile-optimized node interface.</div>
+                    <div class="card-label">MOBILE</div>
+                </a>
+
+                <a class="card" onclick="openPreview('tra-mobile-rails.html', 'TRA Mobile Rails'); return false;">
+                    <div class="card-title">TRA MOBILE RAILS</div>
+                    <div class="card-desc">Mobile-optimized rail system.</div>
+                    <div class="card-label">MOBILE</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- UTILITIES & READERS -->
+        <div class="section">
+            <div class="section-title">🛠️ UTILITIES & READERS</div>
+            <div class="grid">
+                <a class="card" onclick="openPreview('ai-duo-reader.html', 'AI Duo Reader'); return false;">
+                    <div class="card-title">AI DUO READER</div>
+                    <div class="card-desc">Dual AI reading interface for text analysis.</div>
+                    <div class="card-label">UTILITY</div>
+                </a>
+
+                <a class="card" onclick="openPreview('video-showcase.html', 'Video Showcase'); return false;">
+                    <div class="card-title">VIDEO SHOWCASE</div>
+                    <div class="card-desc">Media presentation interface.</div>
+                    <div class="card-label">MEDIA</div>
+                </a>
+
+                <a class="card" onclick="openPreview('orbit-graph (1).html', 'Orbit Graph'); return false;">
+                    <div class="card-title">ORBIT GRAPH</div>
+                    <div class="card-desc">Orbital graph visualization.</div>
+                    <div class="card-label">VIZ</div>
+                </a>
+
+                <a class="card" onclick="openPreview('clean-welcome.html', 'Clean Welcome'); return false;">
+                    <div class="card-title">CLEAN WELCOME</div>
+                    <div class="card-desc">Minimal welcome screen.</div>
+                    <div class="card-label">LANDING</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- DOCUMENTATION -->
+        <div class="section">
+            <div class="section-title">📚 DOCUMENTATION</div>
+            <div class="grid">
+                <a class="card" href="SHED-FRAME-INTEGRATION.md" target="_blank">
+                    <div class="card-title">SHED-FRAME INTEGRATION</div>
+                    <div class="card-desc">How shed-frame and func-orb-training work together. Data structure, workflow, connection guide.</div>
+                    <div class="card-label">GUIDE</div>
+                </a>
+
+                <a class="card" href="FINAL-FIXES-SUMMARY.md" target="_blank">
+                    <div class="card-title">FINAL FIXES SUMMARY</div>
+                    <div class="card-desc">Complete list of all UX fixes: character orientation, tetrad controls, data integration.</div>
+                    <div class="card-label">FIXES</div>
+                </a>
+
+                <a class="card" href="MOVEMENT-FIRST-UX-SUMMARY.md" target="_blank">
+                    <div class="card-title">MOVEMENT-FIRST UX</div>
+                    <div class="card-desc">Movement-first design philosophy. Avatar enhancements, control clarity, onboarding improvements.</div>
+                    <div class="card-label">UX</div>
+                </a>
+
+                <a class="card" href="AXIS-INTERACTION-SUMMARY.md" target="_blank">
+                    <div class="card-title">AXIS INTERACTION</div>
+                    <div class="card-desc">Clickable axis labels, camera focus animations, @mention chat system, node dataset integration.</div>
+                    <div class="card-label">FEATURES</div>
+                </a>
+
+                <a class="card" href="UX-FIXES-SUMMARY.md" target="_blank">
+                    <div class="card-title">UX FIXES SUMMARY</div>
+                    <div class="card-desc">Camera positioning, 3D text removal, hexagon integration, message auto-collapse.</div>
+                    <div class="card-label">UX</div>
+                </a>
+
+                <a class="card" href="HEXAGON-INTEGRATION-SUMMARY.md" target="_blank">
+                    <div class="card-title">HEXAGON INTEGRATION</div>
+                    <div class="card-desc">Hexagon radar system integration from node-dataset-viewer into func-orb-training.</div>
+                    <div class="card-label">TECHNICAL</div>
+                </a>
+
+                <a class="card" href="VISUAL-FIX-GUIDE.md" target="_blank">
+                    <div class="card-title">VISUAL FIX GUIDE</div>
+                    <div class="card-desc">Before/after visual diagrams of all fixes. Character orientation, interface comparison, data flow.</div>
+                    <div class="card-label">VISUAL</div>
+                </a>
+
+                <a class="card" href="TEST-MOVEMENT-FIRST.md" target="_blank">
+                    <div class="card-title">TEST CHECKLIST</div>
+                    <div class="card-desc">10-test checklist to verify movement-first UX improvements.</div>
+                    <div class="card-label">TESTING</div>
+                </a>
+
+                <a class="card" href="TEST-UX-FIXES.md" target="_blank">
+                    <div class="card-title">UX TEST CHECKLIST</div>
+                    <div class="card-desc">Complete testing guide for all UX fixes and improvements.</div>
+                    <div class="card-label">TESTING</div>
+                </a>
+
+                <a class="card" href="QUICK-START-AXIS-INTERACTION.md" target="_blank">
+                    <div class="card-title">QUICK START GUIDE</div>
+                    <div class="card-desc">User-friendly guide for axis interaction system and node dataset exploration.</div>
+                    <div class="card-label">QUICKSTART</div>
+                </a>
+
+                <a class="card" href="BUGS-FIXED-404-ERRORS.md" target="_blank">
+                    <div class="card-title">BUGS FIXED - 404 & ERRORS</div>
+                    <div class="card-desc">Critical bug fixes: TypeError on track.color.replace(), 404 on JSON dataset, path resolution. Explains difference between integrated-node-viewer and ai-duo-reader.</div>
+                    <div class="card-label">BUGFIXES</div>
+                </a>
+
+                <a class="card" href="FINAL-INDEX-README.md" target="_blank">
+                    <div class="card-title">INDEX CREATION GUIDE</div>
+                    <div class="card-desc">Documentation for func-index.html creation, navigation system, preview features, and deployment guide.</div>
+                    <div class="card-label">SETUP</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- DATA FILES -->
+        <div class="section">
+            <div class="section-title">💾 DATA FILES</div>
+            <div class="grid">
+                <a class="card" href="complete_node_dataset.json" target="_blank">
+                    <div class="card-title">COMPLETE NODE DATASET</div>
+                    <div class="card-desc">Full dataset: 12 known nodes + 69 synthetic nodes. Coordinates, axes, polarities, phase descriptions.</div>
+                    <div class="card-label">JSON</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="section" style="text-align: center; background: #1a1a1a; color: #e8e4dc;">
+            <div style="font-size: 12px; letter-spacing: 2px; padding: 10px;">
+                ✨ <strong>FUNCTIONAL SUBSTRATE</strong> — Training Ground System ✨
+            </div>
+            <div style="font-size: 10px; color: #999; margin-top: 5px;">
+                6 Axes · 3 Phases · 2 Polarities = 36 Operations
+            </div>
+        </div>
+    </div>
+
+    <!-- PREVIEW FRAME -->
+    <div class="preview-frame" id="previewFrame">
+        <div class="preview-container">
+            <div class="preview-header">
+                <div class="preview-title" id="previewTitle">Loading...</div>
+                <button class="close-btn" onclick="closePreview()">✕ CLOSE</button>
+            </div>
+            <iframe class="preview-iframe" id="previewIframe"></iframe>
+        </div>
+    </div>
+
+    <script>
+        function openPreview(url, title) {
+            document.getElementById('previewTitle').textContent = title;
+            document.getElementById('previewIframe').src = url;
+            document.getElementById('previewFrame').classList.add('active');
+        }
+
+        function closePreview() {
+            document.getElementById('previewFrame').classList.remove('active');
+            document.getElementById('previewIframe').src = '';
+        }
+
+        // Close preview on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closePreview();
+            }
+        });
+
+        // Close preview on background click
+        document.getElementById('previewFrame').addEventListener('click', (e) => {
+            if (e.target.id === 'previewFrame') {
+                closePreview();
+            }
+        });
+    </script>
+</body>
+</html>

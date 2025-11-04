@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Node Dataset Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0b0b0b;
+            color: #f5f5f5;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0;
+            height: 100vh;
+        }
+
+        .panel {
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 2px solid #262626;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel:last-child {
+            border-right: none;
+        }
+
+        .panel.inner {
+            background: linear-gradient(180deg, #1a0a0e 0%, #0b0b0b 100%);
+        }
+
+        .panel.observer {
+            background: #0b0b0b;
+        }
+
+        .panel.outer {
+            background: linear-gradient(180deg, #0a0e1a 0%, #0b0b0b 100%);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #7dd3fc;
+            letter-spacing: 2px;
+        }
+
+        .panel-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #262626;
+        }
+
+        .panel-title {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            margin-bottom: 5px;
+        }
+
+        .panel.inner .panel-title {
+            color: #ff5c7c;
+        }
+
+        .panel.observer .panel-title {
+            color: #7dd3fc;
+        }
+
+        .panel.outer .panel-title {
+            color: #569fff;
+        }
+
+        .panel-subtitle {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .grid-container {
+            background: rgba(22, 22, 22, 0.5);
+            border: 2px solid #262626;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .hexagon-overlay {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hexagon-canvas {
+            display: block;
+            opacity: 0.6;
+        }
+
+        .grid-wrapper {
+            position: relative;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(9, 32px);
+            grid-template-rows: repeat(9, 32px);
+            gap: 2px;
+            justify-content: center;
+            position: relative;
+            z-index: 5;
+        }
+
+        .cell {
+            width: 32px;
+            height: 32px;
+            background: rgba(26, 26, 26, 0.7);
+            border: 1px solid #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            backdrop-filter: blur(2px);
+        }
+
+        .cell:hover {
+            background: rgba(42, 42, 42, 0.9);
+            border-color: #7dd3fc;
+            z-index: 20;
+        }
+
+        .cell.known {
+            background: linear-gradient(135deg, rgba(255, 92, 124, 0.9) 0%, rgba(86, 159, 255, 0.9) 100%);
+            border: 2px solid #fff;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+        }
+
+        .cell.synthetic {
+            background: rgba(38, 38, 38, 0.6);
+            color: #888;
+            border: 1px solid #333;
+        }
+
+        .cell.synthetic:hover {
+            background: rgba(56, 56, 56, 0.9);
+            border-color: #7dd3fc;
+            color: #7dd3fc;
+        }
+
+        .cell.empty {
+            background: rgba(18, 18, 18, 0.3);
+            color: #444;
+        }
+
+        .cell.selected {
+            background: #7dd3fc;
+            color: #0b0b0b;
+            border: 2px solid #fff;
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        .node-card.synthetic {
+            border-color: #333;
+            opacity: 0.85;
+        }
+
+        .node-card.synthetic:hover {
+            border-color: #7dd3fc;
+            opacity: 1;
+        }
+
+        .radar-container {
+            background: #161616;
+            border: 2px solid #262626;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .radar-canvas {
+            width: 100%;
+            max-width: 400px;
+            height: 400px;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+            font-size: 11px;
+        }
+
+        .stat {
+            background: #1a1a1a;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #7dd3fc;
+        }
+
+        .right-panel {
+            overflow-y: auto;
+            max-height: calc(100vh - 40px);
+        }
+
+        .node-card {
+            background: #161616;
+            border: 2px solid #262626;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .node-card:hover {
+            border-color: #7dd3fc;
+            background: #1a1a1a;
+        }
+
+        .panel.inner .node-card:hover {
+            border-color: #ff5c7c;
+        }
+
+        .panel.outer .node-card:hover {
+            border-color: #569fff;
+        }
+
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #262626;
+        }
+
+        .node-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .node-subtitle {
+            font-size: 14px;
+            color: #7dd3fc;
+        }
+
+        .node-coord {
+            background: #0b0b0b;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 18px;
+            color: #7dd3fc;
+            font-weight: bold;
+        }
+
+        .node-meta {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .meta-tag {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .meta-tag.axis {
+            background: #2a2a2a;
+            color: #86efac;
+        }
+
+        .meta-tag.polarity-inner {
+            background: rgba(255, 92, 124, 0.2);
+            color: #ff5c7c;
+        }
+
+        .meta-tag.polarity-outer {
+            background: rgba(86, 159, 255, 0.2);
+            color: #569fff;
+        }
+
+        .phase-section {
+            margin-bottom: 15px;
+        }
+
+        .phase-title {
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .phase-title.shed { color: #ff5c7c; }
+        .phase-title.integrate { color: #569fff; }
+        .phase-title.ground { color: #56ff9f; }
+
+        .phase-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .phase-icon.shed { background: #ff5c7c; }
+        .phase-icon.integrate { background: #569fff; }
+        .phase-icon.ground { background: #56ff9f; }
+
+        .phase-text {
+            color: #bbb;
+            font-size: 13px;
+            line-height: 1.6;
+            padding-left: 28px;
+        }
+
+        .filter-bar {
+            background: #161616;
+            border: 2px solid #262626;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            color: #bbb;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: #2a2a2a;
+            border-color: #7dd3fc;
+        }
+
+        .filter-btn.active {
+            background: #7dd3fc;
+            color: #0b0b0b;
+            border-color: #7dd3fc;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .left-panel {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- INNER PANEL -->
+        <div class="panel inner">
+            <div class="panel-header">
+                <div class="panel-title">🔴 INNER</div>
+                <div class="panel-subtitle">Subjective · Instinct · Seen · Ideas</div>
+            </div>
+            
+            <div class="grid-container">
+                <div class="hexagon-overlay">
+                    <canvas id="innerHexagon" class="hexagon-canvas" width="300" height="300"></canvas>
+                </div>
+                <div class="grid-wrapper">
+                    <div class="grid" id="innerGrid"></div>
+                </div>
+            </div>
+
+            <div class="radar-container">
+                <canvas id="innerRadar" class="radar-canvas" width="200" height="200" style="max-width: 200px; height: 200px;"></canvas>
+            </div>
+
+            <div id="innerNodeList"></div>
+        </div>
+
+        <!-- OBSERVER PANEL -->
+        <div class="panel observer">
+            <div class="panel-header">
+                <div class="panel-title">👁️ OBSERVER</div>
+                <div class="panel-subtitle">Shared Space · Overlap · Balance</div>
+            </div>
+            
+            <div class="grid-container">
+                <div class="hexagon-overlay">
+                    <canvas id="observerInnerHex" class="hexagon-canvas" width="300" height="300"></canvas>
+                </div>
+                <div class="hexagon-overlay">
+                    <canvas id="observerOuterHex" class="hexagon-canvas" width="300" height="300"></canvas>
+                </div>
+                <div class="grid-wrapper">
+                    <div class="grid" id="observerGrid"></div>
+                </div>
+            </div>
+
+            <div class="stats" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div class="stat">
+                    <div class="stat-label">KNOWN NODES</div>
+                    <div class="stat-value" id="knownCount" style="color: #7dd3fc;">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">SYNTHETIC</div>
+                    <div class="stat-value" id="syntheticCount" style="color: #666;">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">INNER</div>
+                    <div class="stat-value" id="innerCount" style="color: #ff5c7c;">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">OUTER</div>
+                    <div class="stat-value" id="outerCount" style="color: #569fff;">0</div>
+                </div>
+                <div class="stat" style="grid-column: 1 / -1;">
+                    <div class="stat-label">TOTAL COORDINATES</div>
+                    <div class="stat-value" id="totalCount" style="color: #86efac;">0</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; padding: 15px; background: rgba(22,22,22,0.8); border-radius: 6px; border: 1px solid #262626;">
+                <div style="font-size: 11px; color: #666; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Current Selection</div>
+                <div id="observerInfo" style="font-size: 12px; color: #bbb;">Click any node to see details</div>
+            </div>
+        </div>
+
+        <!-- OUTER PANEL -->
+        <div class="panel outer">
+            <div class="panel-header">
+                <div class="panel-title">🔵 OUTER</div>
+                <div class="panel-subtitle">Objective · Reason · Unseen · Ideology</div>
+            </div>
+            
+            <div class="grid-container">
+                <div class="hexagon-overlay">
+                    <canvas id="outerHexagon" class="hexagon-canvas" width="300" height="300"></canvas>
+                </div>
+                <div class="grid-wrapper">
+                    <div class="grid" id="outerGrid"></div>
+                </div>
+            </div>
+
+            <div class="radar-container">
+                <canvas id="outerRadar" class="radar-canvas" width="200" height="200" style="max-width: 200px; height: 200px;"></canvas>
+            </div>
+
+            <div id="outerNodeList"></div>
+        </div>
+    </div>
+
+    <script>
+        let dataset = null;
+        let selectedNode = null;
+        let activeFilters = new Set();
+
+        // Load dataset
+        async function loadDataset() {
+            try {
+                const response = await fetch('/Users/gaia/FUNC-SUB/complete_node_dataset.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                dataset = await response.json();
+                console.log('✅ Dataset loaded:', dataset.known_nodes.length, 'known nodes');
+                initializeViewer();
+            } catch (e) {
+                console.error('❌ Failed to load dataset:', e);
+                // Try relative path as fallback
+                try {
+                    const response2 = await fetch('complete_node_dataset.json');
+                    dataset = await response2.json();
+                    console.log('✅ Dataset loaded (relative path):', dataset.known_nodes.length, 'known nodes');
+                    initializeViewer();
+                } catch (e2) {
+                    console.error('❌ Fallback also failed:', e2);
+                    document.body.innerHTML = `
+                        <div style="padding: 40px; text-align: center; color: #f87171;">
+                            <h2>⚠️ Failed to Load Dataset</h2>
+                            <p style="margin: 20px 0;">Make sure complete_node_dataset.json is accessible.</p>
+                            <p style="font-size: 12px; color: #666;">Tried: /Users/gaia/FUNC-SUB/complete_node_dataset.json and ./complete_node_dataset.json</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // Track INNER and OUTER axis values separately
+        const innerAxisValues = [0.3, 0.3, 0.3, 0.3, 0.3, 0.3];
+        const outerAxisValues = [0.3, 0.3, 0.3, 0.3, 0.3, 0.3];
+
+        function initializeViewer() {
+            renderAllGrids();
+            renderNodeLists();
+            updateStats();
+            updateAllRadars();
+        }
+
+        function renderAllGrids() {
+            renderGrid('innerGrid', 'Inner');
+            renderGrid('outerGrid', 'Outer');
+            renderGrid('observerGrid', null); // Observer shows all
+        }
+
+        function renderGrid(gridId, polarity) {
+            const grid = document.getElementById(gridId);
+            grid.innerHTML = '';
+            
+            for (let row = 1; row <= 9; row++) {
+                for (let col = 1; col <= 9; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.coord = `${row},${col}`;
+                    
+                    // Check known nodes first
+                    const knownNode = dataset.known_nodes.find(n => 
+                        n.coordinate[0] === row && n.coordinate[1] === col &&
+                        (polarity ? n.polarity === polarity : true)
+                    );
+                    
+                    // Check synthetic nodes
+                    const syntheticNode = dataset.synthetic_nodes.find(n => 
+                        n.coordinate[0] === row && n.coordinate[1] === col
+                    );
+                    
+                    if (knownNode) {
+                        cell.classList.add('known');
+                        cell.textContent = knownNode.id;
+                        cell.title = knownNode.name;
+                        cell.onclick = () => selectNode(knownNode, 'known');
+                    } else if (syntheticNode && !polarity) {
+                        // Synthetic nodes only show in observer (no polarity filter)
+                        cell.classList.add('synthetic');
+                        cell.textContent = '◦';
+                        cell.title = syntheticNode.name;
+                        cell.onclick = () => selectNode(syntheticNode, 'synthetic');
+                    } else {
+                        cell.classList.add('empty');
+                        cell.textContent = '·';
+                    }
+                    
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        function renderNodeLists() {
+            renderNodeList('innerNodeList', 'Inner');
+            renderNodeList('outerNodeList', 'Outer');
+        }
+
+        function renderNodeList(listId, polarity) {
+            const nodeList = document.getElementById(listId);
+            const knownNodes = dataset.known_nodes.filter(n => n.polarity === polarity);
+            
+            // Get synthetic nodes that are near this polarity's known nodes
+            const syntheticNodes = dataset.synthetic_nodes.filter(s => {
+                // Include if it's close to any known node of this polarity
+                return knownNodes.some(k => {
+                    const dist = Math.abs(s.coordinate[0] - k.coordinate[0]) + 
+                                 Math.abs(s.coordinate[1] - k.coordinate[1]);
+                    return dist <= 2; // Within 2 cells
+                });
+            });
+            
+            const allNodes = [...knownNodes, ...syntheticNodes];
+            
+            nodeList.innerHTML = allNodes.map(node => {
+                const isKnown = node.id !== undefined;
+                const nodeType = isKnown ? 'known' : 'synthetic';
+                
+                return `
+                <div class="node-card ${nodeType}" data-coord="${node.coordinate[0]},${node.coordinate[1]}" onclick='selectNode(${JSON.stringify(node).replace(/'/g, "&#39;")}, "${nodeType}")'>
+                    <div class="node-header">
+                        <div>
+                            <div class="node-title">${node.name}</div>
+                            ${isKnown ? `<div class="node-subtitle">${node.subtitle}</div>` : `<div class="node-subtitle" style="color: #666;">${node.nearest_node || 'Synthetic'}</div>`}
+                        </div>
+                        <div class="node-coord">(${node.coordinate[0]}, ${node.coordinate[1]})</div>
+                    </div>
+                    
+                    ${isKnown ? `
+                    <div class="node-meta">
+                        <span class="meta-tag axis">${node.axis}</span>
+                        <span class="meta-tag polarity-${node.polarity.toLowerCase()}">${node.polarity}</span>
+                    </div>
+                    ` : `
+                    <div class="node-meta">
+                        <span class="meta-tag" style="background: #2a2a2a;">Synthetic</span>
+                        <span class="meta-tag" style="background: #2a2a2a;">${node.quadrant || 'Center'}</span>
+                    </div>
+                    `}
+                    
+                    <div class="phase-section">
+                        <div class="phase-title shed">
+                            <span class="phase-icon shed">🔴</span>
+                            SHED
+                        </div>
+                        <div class="phase-text">${node.shedding}</div>
+                    </div>
+                    
+                    <div class="phase-section">
+                        <div class="phase-title integrate">
+                            <span class="phase-icon integrate">⚪</span>
+                            INTEGRATE
+                        </div>
+                        <div class="phase-text">${node.integrating}</div>
+                    </div>
+                    
+                    <div class="phase-section">
+                        <div class="phase-title ground">
+                            <span class="phase-icon ground">🟢</span>
+                            GROUND
+                        </div>
+                        <div class="phase-text">${node.grounding}</div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function selectNode(node, nodeType) {
+            selectedNode = node;
+            const isKnown = nodeType === 'known' || node.id !== undefined;
+            
+            // Update grid selection across all grids
+            document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
+            document.querySelectorAll(`.cell[data-coord="${node.coordinate[0]},${node.coordinate[1]}"]`).forEach(cell => {
+                cell.classList.add('selected');
+            });
+            
+            // Update axis values based on polarity (for known nodes) or nearest node (for synthetic)
+            const axes = ['IDENTITY', 'EXPERIENCE', 'LANGUAGE', 'DOMAIN', 'PURPOSE', 'ORDER'];
+            
+            if (isKnown && node.axis) {
+                const axisIndex = axes.indexOf(node.axis.toUpperCase());
+                if (axisIndex >= 0) {
+                    if (node.polarity === 'Inner') {
+                        innerAxisValues[axisIndex] = 0.9;
+                        innerAxisValues.forEach((v, i) => {
+                            if (i !== axisIndex) innerAxisValues[i] = Math.max(0.2, v * 0.7);
+                        });
+                    } else {
+                        outerAxisValues[axisIndex] = 0.9;
+                        outerAxisValues.forEach((v, i) => {
+                            if (i !== axisIndex) outerAxisValues[i] = Math.max(0.2, v * 0.7);
+                        });
+                    }
+                }
+            } else if (node.nearest_node) {
+                // Synthetic node - boost based on nearest known node
+                const nearestAxis = node.nearest_node.split('(')[0].trim().split(' ')[0].toUpperCase();
+                const axisIndex = axes.indexOf(nearestAxis);
+                if (axisIndex >= 0) {
+                    // Moderate boost for synthetic nodes
+                    innerAxisValues[axisIndex] = Math.min(0.7, innerAxisValues[axisIndex] + 0.2);
+                    outerAxisValues[axisIndex] = Math.min(0.7, outerAxisValues[axisIndex] + 0.2);
+                }
+            }
+            
+            // Update observer info
+            const observerInfo = document.getElementById('observerInfo');
+            const color = isKnown ? (node.polarity === 'Inner' ? '#ff5c7c' : '#569fff') : '#7dd3fc';
+            observerInfo.innerHTML = `
+                <div style="font-weight: bold; color: ${color}; margin-bottom: 8px;">
+                    ${node.name} ${isKnown ? `(${node.subtitle})` : ''}
+                </div>
+                <div style="font-size: 11px; color: #888; margin-bottom: 6px;">
+                    ${isKnown ? `${node.axis} · ${node.polarity}` : `Synthetic · ${node.nearest_node || 'Generated'}`}<br>
+                    Position (${node.coordinate[0]}, ${node.coordinate[1]})${node.distance_from_center ? ` · ${node.distance_from_center.toFixed(2)} from center` : ''}
+                </div>
+                <div style="font-size: 10px; color: #666;">
+                    ${isKnown ? 'Known node with full axis data' : 'Synthetic node interpolated from nearby coordinates'}
+                </div>
+            `;
+            
+            // Update all radars
+            updateAllRadars();
+            
+            // Scroll to card in appropriate panel
+            const card = document.querySelector(`.node-card[data-coord="${node.coordinate[0]},${node.coordinate[1]}"]`);
+            if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function updateAllRadars() {
+            drawHexagonOverlay('innerHexagon', innerAxisValues, '#ff5c7c', 0.6);
+            drawHexagonOverlay('outerHexagon', outerAxisValues, '#569fff', 0.6);
+            
+            // Observer shows both hexagons overlaid
+            drawHexagonOverlay('observerInnerHex', innerAxisValues, '#ff5c7c', 0.4);
+            drawHexagonOverlay('observerOuterHex', outerAxisValues, '#569fff', 0.4);
+            
+            drawSmallRadar('innerRadar', innerAxisValues, '#ff5c7c');
+            drawSmallRadar('outerRadar', outerAxisValues, '#569fff');
+        }
+
+        function drawHexagonOverlay(canvasId, values, color, opacity) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const centerX = 150;
+            const centerY = 150;
+            const radius = 130;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, 400, 400);
+            
+            const axes = ['IDENTITY', 'EXPERIENCE', 'LANGUAGE', 'DOMAIN', 'PURPOSE', 'ORDER'];
+            
+            // Draw axes lines (subtle)
+            ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2 - Math.PI / 2;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(
+                    centerX + Math.cos(angle) * radius,
+                    centerY + Math.sin(angle) * radius
+                );
+                ctx.stroke();
+            }
+            
+            // Draw data polygon
+            ctx.globalAlpha = opacity;
+            ctx.beginPath();
+            for (let i = 0; i <= 6; i++) {
+                const angle = (i / 6) * Math.PI * 2 - Math.PI / 2;
+                const value = values[i % 6];
+                const x = centerX + Math.cos(angle) * radius * value;
+                const y = centerY + Math.sin(angle) * radius * value;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            
+            // Fill with color
+            ctx.fillStyle = color.replace('rgb', 'rgba').replace(')', ', 0.15)');
+            ctx.fill();
+            
+            // Stroke polygon
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.globalAlpha = 1.0;
+            
+            // Draw axis labels
+            ctx.fillStyle = '#888';
+            ctx.font = 'bold 9px Courier New';
+            ctx.textAlign = 'center';
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2 - Math.PI / 2;
+                const labelRadius = radius + 20;
+                const x = centerX + Math.cos(angle) * labelRadius;
+                const y = centerY + Math.sin(angle) * labelRadius;
+                ctx.fillText(axes[i], x, y + 3);
+            }
+        }
+
+        function drawSmallRadar(canvasId, values, color) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const centerX = 90;
+            const centerY = 90;
+            const radius = 70;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, 180, 180);
+            
+            const axes = ['IDENTITY', 'EXPERIENCE', 'LANGUAGE', 'DOMAIN', 'PURPOSE', 'ORDER'];
+            
+            // Draw grid circles
+            ctx.strokeStyle = '#2a2a2a';
+            ctx.lineWidth = 1;
+            for (let i = 0.33; i <= 1; i += 0.33) {
+                ctx.beginPath();
+                for (let j = 0; j <= 6; j++) {
+                    const angle = (j / 6) * Math.PI * 2 - Math.PI / 2;
+                    const x = centerX + Math.cos(angle) * radius * i;
+                    const y = centerY + Math.sin(angle) * radius * i;
+                    if (j === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.stroke();
+            }
+            
+            // Draw axes lines
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2 - Math.PI / 2;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(
+                    centerX + Math.cos(angle) * radius,
+                    centerY + Math.sin(angle) * radius
+                );
+                ctx.stroke();
+            }
+            
+            // Draw data polygon
+            ctx.beginPath();
+            for (let i = 0; i <= 6; i++) {
+                const angle = (i / 6) * Math.PI * 2 - Math.PI / 2;
+                const value = values[i % 6];
+                const x = centerX + Math.cos(angle) * radius * value;
+                const y = centerY + Math.sin(angle) * radius * value;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            
+            // Fill with gradient
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+            gradient.addColorStop(0, color.replace('rgb', 'rgba').replace(')', ', 0.4)'));
+            gradient.addColorStop(1, color.replace('rgb', 'rgba').replace(')', ', 0.05)'));
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            // Stroke polygon
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw axis labels
+            ctx.fillStyle = '#aaa';
+            ctx.font = 'bold 8px Courier New';
+            ctx.textAlign = 'center';
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2 - Math.PI / 2;
+                const labelRadius = radius + 15;
+                const x = centerX + Math.cos(angle) * labelRadius;
+                const y = centerY + Math.sin(angle) * labelRadius;
+                
+                // Abbreviated labels for small radar
+                const abbrev = axes[i].substring(0, 3);
+                ctx.fillText(abbrev, x, y + 3);
+            }
+        }
+
+        function updateStats() {
+            const knownNodes = dataset.known_nodes.length;
+            const syntheticNodes = dataset.synthetic_nodes.length;
+            const totalNodes = knownNodes + syntheticNodes;
+            
+            const innerNodes = dataset.known_nodes.filter(n => n.polarity === 'Inner');
+            const outerNodes = dataset.known_nodes.filter(n => n.polarity === 'Outer');
+            
+            document.getElementById('knownCount').textContent = knownNodes;
+            document.getElementById('syntheticCount').textContent = syntheticNodes;
+            document.getElementById('totalCount').textContent = totalNodes;
+            document.getElementById('innerCount').textContent = innerNodes.length;
+            document.getElementById('outerCount').textContent = outerNodes.length;
+            
+            // Calculate initial axis values from all nodes
+            const axes = ['IDENTITY', 'EXPERIENCE', 'LANGUAGE', 'DOMAIN', 'PURPOSE', 'ORDER'];
+            axes.forEach((axis, i) => {
+                const innerNodesOnAxis = innerNodes.filter(n => n.axis.toUpperCase() === axis);
+                const outerNodesOnAxis = outerNodes.filter(n => n.axis.toUpperCase() === axis);
+                
+                innerAxisValues[i] = 0.3 + (innerNodesOnAxis.length * 0.1);
+                outerAxisValues[i] = 0.3 + (outerNodesOnAxis.length * 0.1);
+            });
+            
+            console.log('📊 Dataset Stats:', {
+                known: knownNodes,
+                synthetic: syntheticNodes,
+                total: totalNodes,
+                inner: innerNodes.length,
+                outer: outerNodes.length
+            });
+        }
+
+        // Initialize
+        loadDataset();
+    </script>
+</body>
+</html>
