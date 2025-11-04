@@ -1,599 +1,315 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FUNCTOWN - Complete HTML Index</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FUNCTOWN Index — All HTML Files</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    body {
-      font-family: 'Courier New', monospace;
-      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2a 100%);
-      color: #f5f5f5;
-      line-height: 1.6;
-      min-height: 100vh;
-    }
+        body {
+            font-family: 'Courier New', monospace;
+            background: #e8e4dc;
+            color: #1a1a1a;
+            overflow-x: hidden;
+        }
 
-    .hero {
-      text-align: center;
-      padding: 60px 20px 40px;
-      background: linear-gradient(180deg, rgba(125,211,252,0.1) 0%, transparent 100%);
-      border-bottom: 2px solid #262626;
-    }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-    .hero h1 {
-      font-size: 48px;
-      color: #7dd3fc;
-      letter-spacing: 4px;
-      margin-bottom: 10px;
-      text-shadow: 0 0 20px rgba(125,211,252,0.5);
-    }
+        header {
+            background: #f5f3ed;
+            border: 3px solid #1a1a1a;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
 
-    .hero .subtitle {
-      font-size: 16px;
-      color: #bbb;
-      letter-spacing: 2px;
-    }
+        h1 {
+            font-size: 48px;
+            font-weight: bold;
+            letter-spacing: 8px;
+            margin-bottom: 10px;
+        }
 
-    .stats {
-      display: flex;
-      justify-content: center;
-      gap: 40px;
-      margin: 30px 0;
-      flex-wrap: wrap;
-    }
+        .subtitle {
+            font-size: 14px;
+            letter-spacing: 3px;
+            color: #666;
+        }
 
-    .stat {
-      text-align: center;
-    }
+        .section {
+            background: #f5f3ed;
+            border: 3px solid #1a1a1a;
+            margin-bottom: 20px;
+            padding: 20px;
+        }
 
-    .stat-value {
-      font-size: 36px;
-      font-weight: bold;
-      color: #7dd3fc;
-    }
+        .section-title {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 6px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #1a1a1a;
+        }
 
-    .stat-label {
-      font-size: 12px;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
 
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 40px 20px;
-    }
+        .card {
+            background: #e8e4dc;
+            border: 3px solid #1a1a1a;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: #1a1a1a;
+            display: block;
+        }
 
-    .category {
-      margin-bottom: 60px;
-    }
+        .card:hover {
+            background: #fff;
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0 #1a1a1a;
+        }
 
-    .category-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 25px;
-      padding-bottom: 15px;
-      border-bottom: 2px solid #262626;
-    }
+        .card-title {
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
 
-    .category-title {
-      font-size: 28px;
-      color: #7dd3fc;
-      letter-spacing: 2px;
-    }
+        .card-desc {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.4;
+        }
 
-    .category-count {
-      font-size: 14px;
-      color: #666;
-      background: #1a1a1a;
-      padding: 6px 14px;
-      border-radius: 20px;
-      border: 1px solid #262626;
-    }
+        .card-label {
+            display: inline-block;
+            background: #1a1a1a;
+            color: #e8e4dc;
+            padding: 2px 8px;
+            font-size: 9px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-top: 8px;
+        }
 
-    .files-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 20px;
-    }
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 20px 0;
+        }
 
-    .file-card {
-      background: linear-gradient(135deg, #161616 0%, #1a1a1a 100%);
-      border: 2px solid #262626;
-      border-radius: 12px;
-      padding: 20px;
-      transition: all 0.3s;
-      position: relative;
-      overflow: hidden;
-    }
+        .stat {
+            text-align: center;
+        }
 
-    .file-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 4px;
-      background: linear-gradient(90deg, #7dd3fc, #569fff, #c78fff);
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+        }
 
-    .file-card:hover {
-      border-color: #7dd3fc;
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(125, 211, 252, 0.2);
-    }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
 
-    .file-card:hover::before {
-      opacity: 1;
-    }
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 32px;
+                letter-spacing: 4px;
+            }
 
-    .file-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 12px;
-    }
-
-    .file-name {
-      font-size: 16px;
-      font-weight: bold;
-      color: #fff;
-      word-break: break-word;
-    }
-
-    .file-icon {
-      font-size: 24px;
-      opacity: 0.6;
-    }
-
-    .file-description {
-      color: #aaa;
-      font-size: 13px;
-      line-height: 1.5;
-      margin-bottom: 15px;
-      min-height: 60px;
-    }
-
-    .file-meta {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 15px;
-    }
-
-    .tag {
-      padding: 4px 10px;
-      background: #262626;
-      border: 1px solid #333;
-      border-radius: 4px;
-      font-size: 10px;
-      color: #7dd3fc;
-      text-transform: uppercase;
-      font-weight: bold;
-    }
-
-    .file-actions {
-      display: flex;
-      gap: 10px;
-    }
-
-    .btn {
-      flex: 1;
-      padding: 10px;
-      background: #262626;
-      border: 1px solid #333;
-      border-radius: 6px;
-      color: #7dd3fc;
-      text-decoration: none;
-      text-align: center;
-      font-size: 13px;
-      font-weight: bold;
-      transition: all 0.2s;
-      display: block;
-    }
-
-    .btn:hover {
-      background: #7dd3fc;
-      color: #0a0a0a;
-      border-color: #7dd3fc;
-    }
-
-    .search-bar {
-      margin: 30px 0;
-      text-align: center;
-    }
-
-    .search-input {
-      width: 100%;
-      max-width: 600px;
-      padding: 15px 20px;
-      background: #161616;
-      border: 2px solid #262626;
-      border-radius: 10px;
-      color: #f5f5f5;
-      font-family: 'Courier New', monospace;
-      font-size: 16px;
-      transition: border-color 0.3s;
-    }
-
-    .search-input:focus {
-      outline: none;
-      border-color: #7dd3fc;
-      box-shadow: 0 0 20px rgba(125, 211, 252, 0.2);
-    }
-
-    footer {
-      background: #0a0a0a;
-      border-top: 2px solid #262626;
-      padding: 40px 20px;
-      margin-top: 60px;
-      text-align: center;
-    }
-
-    .footer-content {
-      max-width: 1400px;
-      margin: 0 auto;
-      color: #666;
-      font-size: 13px;
-    }
-
-    .footer-links {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      margin-top: 20px;
-      flex-wrap: wrap;
-    }
-
-    .footer-links a {
-      color: #7dd3fc;
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-
-    .footer-links a:hover {
-      color: #fff;
-    }
-
-    @media (max-width: 768px) {
-      .hero h1 {
-        font-size: 32px;
-      }
-
-      .files-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .stats {
-        gap: 20px;
-      }
-    }
-  </style>
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="hero">
-    <h1>🏙️ FUNCTOWN</h1>
-    <p class="subtitle">Complete HTML Repository Index</p>
-    
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-value" id="totalFiles">14</div>
-        <div class="stat-label">HTML Files</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value" id="totalCategories">4</div>
-        <div class="stat-label">Categories</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value">100%</div>
-        <div class="stat-label">Cataloged</div>
-      </div>
+    <div class="container">
+        <header>
+            <h1>FUNCTOWN</h1>
+            <div class="subtitle">COMPLETE HTML REPOSITORY INDEX</div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value">19</div>
+                    <div class="stat-label">HTML FILES</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">5</div>
+                    <div class="stat-label">CATEGORIES</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">100%</div>
+                    <div class="stat-label">CATALOGED</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- PRIMARY APPLICATIONS -->
+        <div class="section">
+            <div class="section-title">PRIMARY APPLICATIONS</div>
+            <div class="grid">
+                <a class="card" href="func-orb-training.html">
+                    <div class="card-title">ORBITAL TRAINING</div>
+                    <div class="card-desc">Interactive 3D training ground with character movement, grid navigation, and node placement</div>
+                    <div class="card-label">PRIMARY</div>
+                </a>
+
+                <a class="card" href="shed-frame.html">
+                    <div class="card-title">SHED FRAMEWORK</div>
+                    <div class="card-desc">Clean Bauhaus study interface - 36 operations across 6 axes and 3 phases</div>
+                    <div class="card-label">STUDY</div>
+                </a>
+
+                <a class="card" href="node-dataset-viewer.html">
+                    <div class="card-title">NODE DATASET VIEWER</div>
+                    <div class="card-desc">3-panel view with hexagon radar overlays - 12 known + 69 synthetic nodes</div>
+                    <div class="card-label">EXPLORER</div>
+                </a>
+
+                <a class="card" href="integrated-node-viewer.html">
+                    <div class="card-title">INTEGRATED VIEWER</div>
+                    <div class="card-desc">Combined node exploration with enhanced radar visualization</div>
+                    <div class="card-label">INTEGRATED</div>
+                </a>
+
+                <a class="card" href="func-index.html">
+                    <div class="card-title">FUNC INDEX</div>
+                    <div class="card-desc">Master index with preview system - click cards to open in fullscreen iframe</div>
+                    <div class="card-label">INDEX</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- ORBITAL SYSTEMS -->
+        <div class="section">
+            <div class="section-title">ORBITAL SYSTEMS</div>
+            <div class="grid">
+                <a class="card" href="func-orb-centaur.html">
+                    <div class="card-title">CENTAUR MODE</div>
+                    <div class="card-desc">3-channel view - Inner, Outer, Observer scenes running simultaneously</div>
+                    <div class="card-label">ADVANCED</div>
+                </a>
+
+                <a class="card" href="func-orb.html">
+                    <div class="card-title">ORIGINAL ORB</div>
+                    <div class="card-desc">Early orbital interface prototype - foundational version</div>
+                    <div class="card-label">LEGACY</div>
+                </a>
+
+                <a class="card" href="orbit-graph (1).html">
+                    <div class="card-title">ORBIT GRAPH</div>
+                    <div class="card-desc">Orbital graph visualization with chart-based representation</div>
+                    <div class="card-label">VIZ</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- TRAINING APPARATUS -->
+        <div class="section">
+            <div class="section-title">TRAINING APPARATUS</div>
+            <div class="grid">
+                <a class="card" href="tra.html">
+                    <div class="card-title">TRA BAUHAUS</div>
+                    <div class="card-desc">Static Bauhaus poster layout of training operations</div>
+                    <div class="card-label">POSTER</div>
+                </a>
+
+                <a class="card" href="tra-grid-3d.html">
+                    <div class="card-title">TRA GRID 3D</div>
+                    <div class="card-desc">3D grid visualization experiment for spatial positioning</div>
+                    <div class="card-label">EXPERIMENT</div>
+                </a>
+
+                <a class="card" href="tra-mobile-nodes.html">
+                    <div class="card-title">TRA MOBILE NODES</div>
+                    <div class="card-desc">Mobile-optimized node interface with touch controls</div>
+                    <div class="card-label">MOBILE</div>
+                </a>
+
+                <a class="card" href="tra-mobile-rails.html">
+                    <div class="card-title">TRA MOBILE RAILS</div>
+                    <div class="card-desc">Mobile-optimized rail system with swipe gestures</div>
+                    <div class="card-label">MOBILE</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- UTILITIES & READERS -->
+        <div class="section">
+            <div class="section-title">UTILITIES & READERS</div>
+            <div class="grid">
+                <a class="card" href="ai-duo-reader.html">
+                    <div class="card-title">AI DUO READER</div>
+                    <div class="card-desc">Dual AI reading interface for text analysis with SHED framework integration</div>
+                    <div class="card-label">UTILITY</div>
+                </a>
+
+                <a class="card" href="video-showcase.html">
+                    <div class="card-title">VIDEO SHOWCASE</div>
+                    <div class="card-desc">Media presentation interface with organized galleries</div>
+                    <div class="card-label">MEDIA</div>
+                </a>
+
+                <a class="card" href="clean-welcome.html">
+                    <div class="card-title">CLEAN WELCOME</div>
+                    <div class="card-desc">Minimal welcome screen template</div>
+                    <div class="card-label">LANDING</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- CENTAUR BOX VERSIONS -->
+        <div class="section">
+            <div class="section-title">CENTAUR BOX VERSIONS</div>
+            <div class="grid">
+                <a class="card" href="index.html">
+                    <div class="card-title">INDEX ORIGINAL</div>
+                    <div class="card-desc">Original Centaur Box - foundational ethical AI experiment</div>
+                    <div class="card-label">LEGACY</div>
+                </a>
+
+                <a class="card" href="index (13).html">
+                    <div class="card-title">INDEX 13</div>
+                    <div class="card-desc">Centaur Box experiment - mobile single-file app with ethical sandbox</div>
+                    <div class="card-label">VERSION</div>
+                </a>
+
+                <a class="card" href="index 14.html">
+                    <div class="card-title">INDEX 14</div>
+                    <div class="card-desc">Updated Centaur Box with enhanced features and refinements</div>
+                    <div class="card-label">VERSION</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="section" style="text-align: center; background: #1a1a1a; color: #e8e4dc;">
+            <div style="font-size: 12px; letter-spacing: 2px; padding: 10px;">
+                <strong>FUNCTOWN</strong> — Complete HTML Repository Index
+            </div>
+            <div style="font-size: 10px; color: #999; margin-top: 5px;">
+                19 HTML Files • 5 Categories • All Cataloged
+            </div>
+        </div>
     </div>
-  </div>
-
-  <div class="container">
-    <div class="search-bar">
-      <input 
-        type="text" 
-        class="search-input" 
-        id="searchInput" 
-        placeholder="🔍 Search files by name or description..."
-      >
-    </div>
-
-    <!-- MAIN APPLICATIONS -->
-    <div class="category">
-      <div class="category-header">
-        <h2 class="category-title">🎯 Main Applications</h2>
-        <span class="category-count" id="mainCount">5 files</span>
-      </div>
-      <div class="files-grid" id="mainGrid">
-        <!-- Files will be inserted here -->
-      </div>
-    </div>
-
-    <!-- TRAINING & ORBITAL -->
-    <div class="category">
-      <div class="category-header">
-        <h2 class="category-title">🌌 Training & Orbital Systems</h2>
-        <span class="category-count" id="orbitalCount">5 files</span>
-      </div>
-      <div class="files-grid" id="orbitalGrid">
-        <!-- Files will be inserted here -->
-      </div>
-    </div>
-
-    <!-- TOOLS & UTILITIES -->
-    <div class="category">
-      <div class="category-header">
-        <h2 class="category-title">🔧 Tools & Utilities</h2>
-        <span class="category-count" id="toolsCount">3 files</span>
-      </div>
-      <div class="files-grid" id="toolsGrid">
-        <!-- Files will be inserted here -->
-      </div>
-    </div>
-
-    <!-- COMPONENTS & TEMPLATES -->
-    <div class="category">
-      <div class="category-header">
-        <h2 class="category-title">🧩 Components & Templates</h2>
-        <span class="category-count" id="componentsCount">1 file</span>
-      </div>
-      <div class="files-grid" id="componentsGrid">
-        <!-- Files will be inserted here -->
-      </div>
-    </div>
-  </div>
-
-  <footer>
-    <div class="footer-content">
-      <p><strong>FUNCTOWN</strong> - Complete HTML Repository Index</p>
-      <p style="margin-top: 10px;">All files cataloged and organized by category</p>
-      <div class="footer-links">
-        <a href="index (13).html">Centaur Box</a>
-        <a href="func-orb-training.html">Orbital Training</a>
-        <a href="node-dataset-viewer.html">Node Viewer</a>
-        <a href="video-showcase.html">Videos</a>
-      </div>
-      <p style="margin-top: 20px; font-size: 11px; color: #444;">
-        Built with pure HTML/CSS/JS | No external frameworks
-      </p>
-    </div>
-  </footer>
-
-  <script>
-    const files = [
-      // MAIN APPLICATIONS
-      {
-        category: 'main',
-        name: 'index (13).html',
-        icon: '📦',
-        description: 'Centaur Box Experiment - Mobile single-file app with ethical sandbox, hidden-model prompts, ALLY/GATEKEEPER/OBSERVER panels, and strategic planning.',
-        tags: ['Main', 'Chat', 'AI', 'Ethics']
-      },
-      {
-        category: 'main',
-        name: 'index 14.html',
-        icon: '📦',
-        description: 'Updated version of Centaur Box with enhanced features and refinements.',
-        tags: ['Main', 'Updated', 'Chat']
-      },
-      {
-        category: 'main',
-        name: 'index.html',
-        icon: '📦',
-        description: 'Original Centaur Box implementation - foundational version of the ethical AI experiment.',
-        tags: ['Main', 'Original', 'Legacy']
-      },
-      {
-        category: 'main',
-        name: 'video-showcase.html',
-        icon: '🎬',
-        description: 'Video gallery showcasing all demos, tutorials, experiments, and documentation with organized categories and stats.',
-        tags: ['Showcase', 'Media', 'Gallery']
-      },
-      {
-        category: 'main',
-        name: 'node-dataset-viewer.html',
-        icon: '📍',
-        description: 'Complete 81-node dataset viewer with INNER/OUTER/OBSERVER panels, dual hexagon radars, and interactive grid visualization.',
-        tags: ['Dataset', 'Visualization', '3-Panel']
-      },
-
-      // TRAINING & ORBITAL
-      {
-        category: 'orbital',
-        name: 'func-orb-training.html',
-        icon: '🌌',
-        description: 'Orbital training ground with 3D scene, hexagon psychograph radar, avatar movement, grid system, and complete node dataset integration.',
-        tags: ['3D', 'Training', 'Radar', 'Interactive']
-      },
-      {
-        category: 'orbital',
-        name: 'func-orb-centaur.html',
-        icon: '🎭',
-        description: 'Centaur-focused orbital system combining training ground with dual-perspective (INNER/OUTER) scene management.',
-        tags: ['3D', 'Centaur', 'Dual-View']
-      },
-      {
-        category: 'orbital',
-        name: 'func-orb.html',
-        icon: '🛸',
-        description: 'Core orbital visualization system - foundational 3D orbital mechanics and physics simulation.',
-        tags: ['3D', 'Physics', 'Core']
-      },
-      {
-        category: 'orbital',
-        name: 'orbit-graph (1).html',
-        icon: '📊',
-        description: 'Orbital graph visualization with chart-based representation of orbital data and trajectories.',
-        tags: ['Graph', 'Chart', 'Visualization']
-      },
-      {
-        category: 'orbital',
-        name: 'tra.html',
-        icon: '🚂',
-        description: 'Training rail system - foundational training apparatus with track-based navigation.',
-        tags: ['Training', 'Rails', 'Navigation']
-      },
-
-      // TOOLS & UTILITIES
-      {
-        category: 'tools',
-        name: 'tra-grid-3d.html',
-        icon: '📐',
-        description: '3D grid system for training apparatus with cell-based positioning and entity placement.',
-        tags: ['3D', 'Grid', 'Utility']
-      },
-      {
-        category: 'tools',
-        name: 'tra-mobile-nodes.html',
-        icon: '📱',
-        description: 'Mobile-optimized node interface for training system with touch-friendly controls and responsive layout.',
-        tags: ['Mobile', 'Nodes', 'Touch']
-      },
-      {
-        category: 'tools',
-        name: 'tra-mobile-rails.html',
-        icon: '📱',
-        description: 'Mobile-optimized rail interface with swipe gestures and simplified navigation for training tracks.',
-        tags: ['Mobile', 'Rails', 'Touch']
-      },
-
-      // COMPONENTS & TEMPLATES
-      {
-        category: 'components',
-        name: 'clean-welcome.html',
-        icon: '🎨',
-        description: 'Clean welcome screen template with progression-focused UI, unlock status display, and command reference.',
-        tags: ['Template', 'UI', 'Welcome']
-      }
-    ];
-
-    // Initialize
-    function init() {
-      renderFiles();
-      setupSearch();
-      updateCounts();
-    }
-
-    function renderFiles() {
-      const mainGrid = document.getElementById('mainGrid');
-      const orbitalGrid = document.getElementById('orbitalGrid');
-      const toolsGrid = document.getElementById('toolsGrid');
-      const componentsGrid = document.getElementById('componentsGrid');
-
-      files.forEach(file => {
-        const card = createFileCard(file);
-        switch(file.category) {
-          case 'main':
-            mainGrid.appendChild(card);
-            break;
-          case 'orbital':
-            orbitalGrid.appendChild(card);
-            break;
-          case 'tools':
-            toolsGrid.appendChild(card);
-            break;
-          case 'components':
-            componentsGrid.appendChild(card);
-            break;
-        }
-      });
-    }
-
-    function createFileCard(file) {
-      const card = document.createElement('div');
-      card.className = 'file-card';
-      card.dataset.name = file.name.toLowerCase();
-      card.dataset.description = file.description.toLowerCase();
-      
-      const header = document.createElement('div');
-      header.className = 'file-header';
-      
-      const name = document.createElement('div');
-      name.className = 'file-name';
-      name.textContent = file.name;
-      
-      const icon = document.createElement('div');
-      icon.className = 'file-icon';
-      icon.textContent = file.icon;
-      
-      header.appendChild(name);
-      header.appendChild(icon);
-      
-      const description = document.createElement('div');
-      description.className = 'file-description';
-      description.textContent = file.description;
-      
-      const meta = document.createElement('div');
-      meta.className = 'file-meta';
-      file.tags.forEach(tag => {
-        const tagEl = document.createElement('span');
-        tagEl.className = 'tag';
-        tagEl.textContent = tag;
-        meta.appendChild(tagEl);
-      });
-      
-      const actions = document.createElement('div');
-      actions.className = 'file-actions';
-      
-      const openBtn = document.createElement('a');
-      openBtn.href = file.name;
-      openBtn.className = 'btn';
-      openBtn.textContent = 'Open →';
-      
-      actions.appendChild(openBtn);
-      
-      card.appendChild(header);
-      card.appendChild(description);
-      card.appendChild(meta);
-      card.appendChild(actions);
-      
-      return card;
-    }
-
-    function setupSearch() {
-      const searchInput = document.getElementById('searchInput');
-      searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase();
-        const cards = document.querySelectorAll('.file-card');
-        
-        cards.forEach(card => {
-          const name = card.dataset.name;
-          const description = card.dataset.description;
-          const matches = name.includes(query) || description.includes(query);
-          card.style.display = matches ? 'block' : 'none';
-        });
-      });
-    }
-
-    function updateCounts() {
-      const mainCount = files.filter(f => f.category === 'main').length;
-      const orbitalCount = files.filter(f => f.category === 'orbital').length;
-      const toolsCount = files.filter(f => f.category === 'tools').length;
-      const componentsCount = files.filter(f => f.category === 'components').length;
-
-      document.getElementById('mainCount').textContent = `${mainCount} files`;
-      document.getElementById('orbitalCount').textContent = `${orbitalCount} files`;
-      document.getElementById('toolsCount').textContent = `${toolsCount} files`;
-      document.getElementById('componentsCount').textContent = `${componentsCount} file${componentsCount !== 1 ? 's' : ''}`;
-      document.getElementById('totalFiles').textContent = files.length;
-    }
-
-    // Initialize on load
-    init();
-  </script>
 </body>
 </html>

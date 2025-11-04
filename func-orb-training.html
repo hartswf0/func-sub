@@ -2000,23 +2000,23 @@ Your context window contains: Both INNER and OUTER placements, all axis values, 
     <strong style="color: #aaa;">Tip:</strong> Click grid cells in 3D scene to see node data!
   </div>
   
-  <details style="margin-top: 12px;">
-    <summary style="cursor: pointer; font-size: 11px; color: #666; padding: 6px;">⚙️ Movement Controls</summary>
-    <div style="margin-top: 8px; padding: 10px; background: #0a0a0a; border-radius: 4px; border: 1px solid #222;">
-      <div style="font-size: 11px; color: #ff4d2e; font-weight: 700; margin-bottom: 8px;">🎮 Use Arrow Keys to Move Your Character</div>
-      <div style="display: grid; grid-template-columns: repeat(3, 44px); gap: 4px; justify-content: center; margin-bottom: 12px;">
-        <div></div>
-        <button style="width: 44px; height: 44px; background: #1a1d24; border: 2px solid #ff4d2e; color: #ff4d2e; border-radius: 6px; font-size: 20px; cursor: default; font-weight: 700;" title="Move Up">↑</button>
-        <div></div>
-        <button style="width: 44px; height: 44px; background: #1a1d24; border: 2px solid #ff4d2e; color: #ff4d2e; border-radius: 6px; font-size: 20px; cursor: default; font-weight: 700;" title="Move Left">←</button>
-        <button style="width: 44px; height: 44px; background: #1a1d24; border: 2px solid #ff4d2e; color: #ff4d2e; border-radius: 6px; font-size: 20px; cursor: default; font-weight: 700;" title="Move Down">↓</button>
-        <button style="width: 44px; height: 44px; background: #1a1d24; border: 2px solid #ff4d2e; color: #ff4d2e; border-radius: 6px; font-size: 20px; cursor: default; font-weight: 700;" title="Move Right">→</button>
-      </div>
-      <div style="font-size: 10px; color: #777; text-align: center; margin-top: -8px;">
-        Press <strong style="color: #ff4d2e;">SPACE</strong> to interact with entities
-      </div>
+  <div style="margin-bottom: 16px; padding: 14px; background: #1a1d24; border: 2px solid #ff4d2e; border-radius: 6px;">
+    <div style="font-size: 13px; color: #ff4d2e; font-weight: 700; margin-bottom: 10px; text-align: center;">🎮 CHARACTER MOVEMENT</div>
+    <div style="display: grid; grid-template-columns: repeat(3, 50px); gap: 6px; justify-content: center; margin-bottom: 10px;">
+      <div></div>
+      <button onclick="moveCharacter('up')" style="width: 50px; height: 50px; background: #ff4d2e; border: 3px solid #ff6d4e; color: #fff; border-radius: 8px; font-size: 24px; cursor: pointer; font-weight: 700; transition: all 0.2s;" title="Move UP" onmouseover="this.style.background='#ff6d4e'" onmouseout="this.style.background='#ff4d2e'">↑</button>
+      <div></div>
+      <button onclick="moveCharacter('left')" style="width: 50px; height: 50px; background: #ff4d2e; border: 3px solid #ff6d4e; color: #fff; border-radius: 8px; font-size: 24px; cursor: pointer; font-weight: 700; transition: all 0.2s;" title="Move LEFT" onmouseover="this.style.background='#ff6d4e'" onmouseout="this.style.background='#ff4d2e'">←</button>
+      <button onclick="moveCharacter('interact')" style="width: 50px; height: 50px; background: #56ff9f; border: 3px solid #76ffaf; color: #000; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: 700; transition: all 0.2s;" title="INTERACT (Space)" onmouseover="this.style.background='#76ffaf'" onmouseout="this.style.background='#56ff9f'">⚡</button>
+      <button onclick="moveCharacter('right')" style="width: 50px; height: 50px; background: #ff4d2e; border: 3px solid #ff6d4e; color: #fff; border-radius: 8px; font-size: 24px; cursor: pointer; font-weight: 700; transition: all 0.2s;" title="Move RIGHT" onmouseover="this.style.background='#ff6d4e'" onmouseout="this.style.background='#ff4d2e'">→</button>
+      <div></div>
+      <button onclick="moveCharacter('down')" style="width: 50px; height: 50px; background: #ff4d2e; border: 3px solid #ff6d4e; color: #fff; border-radius: 8px; font-size: 24px; cursor: pointer; font-weight: 700; transition: all 0.2s;" title="Move DOWN" onmouseover="this.style.background='#ff6d4e'" onmouseout="this.style.background='#ff4d2e'">↓</button>
+      <div></div>
     </div>
-  </details>
+    <div style="font-size: 10px; color: #aaa; text-align: center;">
+      Click arrows to MOVE • Click ⚡ to INTERACT
+    </div>
+  </div>
 </div>
 `, true);
 
@@ -2061,21 +2061,22 @@ Your context window contains: Both INNER and OUTER placements, all axis values, 
     </button>
   </div>
   
-  <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #333; font-size: 10px; color: #555;">
-    Tetrad: ↗ ENHANCE · ↙ REVERSE · ↑ RETRIEVE · ↓ OBSOLESCE
-  </div>
-  
-  <div style="margin-top: 12px; padding: 8px; background: #1a1a2a; border-radius: 6px; border: 1px solid #444;">
-    <div style="font-size: 10px; color: #9aa3ad; margin-bottom: 6px; text-align: center; font-weight: 700;">🎮 TETRAD CONTROLS</div>
-    <div style="display:flex; align-items:center; gap:6px; justify-content:center;">
-      <button onclick="window.switchTrack('retrieve')" style="min-width:36px; height:36px; background:#1a1a3a; border:2px solid #69f; color:#69f; border-radius:6px; font-size:16px; cursor:pointer; font-weight:700;" title="RETRIEVE">↑</button>
-      <button onclick="window.switchTrack('reverse')" style="min-width:36px; height:36px; background:#3a1a1a; border:2px solid #f66; color:#f66; border-radius:6px; font-size:16px; cursor:pointer; font-weight:700;" title="REVERSE">←</button>
-      <button onclick="window.switchTrack('main')" style="min-width:36px; height:36px; background:#1a1a2a; border:2px solid #69f; color:#69f; border-radius:6px; font-size:16px; cursor:pointer; font-weight:700;" title="MAIN">○</button>
-      <button onclick="window.switchTrack('enhance')" style="min-width:36px; height:36px; background:#1a3a1a; border:2px solid #4a9; color:#4a9; border-radius:6px; font-size:16px; cursor:pointer; font-weight:700;" title="ENHANCE">→</button>
-      <button onclick="window.switchTrack('obsolesce')" style="min-width:36px; height:36px; background:#2a2a2a; border:2px solid #999; color:#999; border-radius:6px; font-size:16px; cursor:pointer; font-weight:700;" title="OBSOLESCE">↓</button>
-      <button onclick="window.toggleTrainPause()" style="min-width:36px; height:36px; border:2px solid #69f; border-radius:6px; background:#1a1a2a; color:#69f; cursor:pointer; font-size:14px; font-weight:700;" title="Pause/Play">⏯</button>
+  <div style="margin-top: 12px; padding: 14px; background: #1a1d24; border: 2px solid #569fff; border-radius: 6px;">
+    <div style="font-size: 13px; color: #569fff; font-weight: 700; margin-bottom: 10px; text-align: center;">🎮 CHARACTER MOVEMENT</div>
+    <div style="display: grid; grid-template-columns: repeat(3, 50px); gap: 6px; justify-content: center; margin-bottom: 10px;">
+      <div></div>
+      <button onclick="moveCharacter('up')" style="width: 50px; height: 50px; background: #569fff; border: 3px solid #76afff; color: #fff; border-radius: 8px; font-size: 24px; cursor: pointer; font-weight: 700; transition: all 0.2s;" title="Move UP" onmouseover="this.style.background='#76afff'" onmouseout="this.style.background='#569fff'">↑</button>
+      <div></div>
+      <button onclick="moveCharacter('left')" style="width: 50px; height: 50px; background: #569fff; border: 3px solid #76afff; color: #fff; border-radius: 8px; font-size: 24px; cursor: pointer; font-weight: 700; transition: all 0.2s;" title="Move LEFT" onmouseover="this.style.background='#76afff'" onmouseout="this.style.background='#569fff'">←</button>
+      <button onclick="moveCharacter('interact')" style="width: 50px; height: 50px; background: #56ff9f; border: 3px solid #76ffaf; color: #000; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: 700; transition: all 0.2s;" title="INTERACT (Space)" onmouseover="this.style.background='#76ffaf'" onmouseout="this.style.background='#56ff9f'">⚡</button>
+      <button onclick="moveCharacter('right')" style="width: 50px; height: 50px; background: #569fff; border: 3px solid #76afff; color: #fff; border-radius: 8px; font-size: 24px; cursor: pointer; font-weight: 700; transition: all 0.2s;" title="Move RIGHT" onmouseover="this.style.background='#76afff'" onmouseout="this.style.background='#569fff'">→</button>
+      <div></div>
+      <button onclick="moveCharacter('down')" style="width: 50px; height: 50px; background: #569fff; border: 3px solid #76afff; color: #fff; border-radius: 8px; font-size: 24px; cursor: pointer; font-weight: 700; transition: all 0.2s;" title="Move DOWN" onmouseover="this.style.background='#76afff'" onmouseout="this.style.background='#569fff'">↓</button>
+      <div></div>
     </div>
-    <div style="font-size: 9px; color: #666; margin-top: 6px; text-align: center;">Switch tetrad mode or pause train movement</div>
+    <div style="font-size: 10px; color: #aaa; text-align: center;">
+      Click arrows to MOVE • Click ⚡ to INTERACT
+    </div>
   </div>
 </div>
 `, true);
@@ -5812,6 +5813,83 @@ Each train car represents a media era. When user chats with cars, respond as tha
       document.querySelectorAll('.corner-menu.visible').forEach(m => m.classList.remove('visible'));
       if (!alreadyVisible) menu.classList.add('visible');
     }
+    
+    // GLOBAL MOVE CHARACTER FUNCTION - Called by on-screen movement buttons
+    window.moveCharacter = function(direction) {
+      const channel = appState.channels.get(appState.currentChannelId);
+      if (!channel || !channel.avatar) {
+        console.warn('No active channel or avatar to move');
+        return;
+      }
+      
+      const avatar = channel.avatar;
+      let newRow = avatar.row;
+      let newCol = avatar.col;
+      
+      switch(direction) {
+        case 'up':
+          newRow = Math.max(0, avatar.row - 1);
+          break;
+        case 'down':
+          newRow = Math.min(8, avatar.row + 1);
+          break;
+        case 'left':
+          newCol = Math.max(0, avatar.col - 1);
+          break;
+        case 'right':
+          newCol = Math.min(8, avatar.col + 1);
+          break;
+        case 'interact':
+          // Trigger space bar interaction
+          const entities = appState.gridEntities.get(channel.id) || [];
+          const nearbyEntity = entities.find(ent => 
+            Math.abs(ent.row - avatar.row) <= 1 && Math.abs(ent.col - avatar.col) <= 1
+          );
+          if (nearbyEntity) {
+            addMessage(channel, 'system',
+              `🤝 **Interacting with ${nearbyEntity.label}**\n\n` +
+              `Type: ${nearbyEntity.type}\n` +
+              `Position: (${nearbyEntity.row}, ${nearbyEntity.col})\n\n` +
+              `(Negotiation system coming soon...)`
+            );
+          } else {
+            addMessage(channel, 'system', '❌ No entity nearby. Move closer and press ⚡ to interact.');
+          }
+          renderMessages(channel);
+          return;
+      }
+      
+      // Move if position changed
+      if (newRow !== avatar.row || newCol !== avatar.col) {
+        avatar.row = newRow;
+        avatar.col = newCol;
+        
+        const pos = gridRowColToWorld(newRow, newCol);
+        avatar.mesh.position.x = pos.x;
+        avatar.mesh.position.z = pos.z;
+        
+        // Update psychograph
+        if (window.schedulePsychographUpdate) {
+          window.schedulePsychographUpdate(channel);
+        }
+        
+        // Check for nearby entities
+        const entities = appState.gridEntities.get(channel.id) || [];
+        const nearbyEntity = entities.find(ent => 
+          Math.abs(ent.row - newRow) <= 1 && Math.abs(ent.col - newCol) <= 1
+        );
+        
+        if (nearbyEntity) {
+          addMessage(channel, 'system',
+            `🚶 Moved to (${newRow}, ${newCol})\n\n` +
+            `📍 **${nearbyEntity.label}** is here!\nClick ⚡ to interact.`
+          );
+        } else {
+          addMessage(channel, 'system', `🚶 Moved to (${newRow}, ${newCol})`);
+        }
+        renderMessages(channel);
+      }
+    };
     
     // Function to bind all global button handlers (will be called in DOMContentLoaded)
     function bindGlobalControls() {
