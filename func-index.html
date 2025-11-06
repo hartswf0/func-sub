@@ -153,7 +153,12 @@
             letter-spacing: 2px;
         }
 
-        .close-btn {
+        .preview-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .preview-btn {
             background: #e8e4dc;
             color: #1a1a1a;
             border: 2px solid #e8e4dc;
@@ -165,7 +170,7 @@
             letter-spacing: 2px;
         }
 
-        .close-btn:hover {
+        .preview-btn:hover {
             background: #fff;
         }
 
@@ -250,6 +255,30 @@
             </div>
         </div>
 
+        <!-- DSL APPLICATIONS -->
+        <div class="section">
+            <div class="section-title">🎯 DSL APPLICATIONS</div>
+            <div class="grid">
+                <a class="card" onclick="openPreview('dsl-02.html', 'DSL-02 Dual Agent Assembly'); return false;">
+                    <div class="card-title">DSL-02 DUAL AGENT</div>
+                    <div class="card-desc">Dual agent scene assembly with INNER/OUTER agents, 3-options observer protocol (SHED/INTEGRATE/GROUND), compositional analysis, and reflection cycles.</div>
+                    <div class="card-label">PRIMARY</div>
+                </a>
+
+                <a class="card" onclick="openPreview('dsl-01.html', 'DSL-01 Single Agent'); return false;">
+                    <div class="card-title">DSL-01 SINGLE AGENT</div>
+                    <div class="card-desc">Single-agent DSL interface with SIG operators, 6-axis readings, and OpenAI API integration for scene composition.</div>
+                    <div class="card-label">LEGACY</div>
+                </a>
+
+                <a class="card" onclick="openPreview('func-sherpa.html', 'FUNC Sherpa'); return false;">
+                    <div class="card-title">FUNC SHERPA</div>
+                    <div class="card-desc">SHED-INTEGRATE-GROUND implementation with grid-based scene building and operator modes.</div>
+                    <div class="card-label">EXPERIMENT</div>
+                </a>
+            </div>
+        </div>
+
         <!-- VARIATIONS & EXPERIMENTS -->
         <div class="section">
             <div class="section-title">🔬 VARIATIONS & EXPERIMENTS</div>
@@ -326,6 +355,12 @@
         <div class="section">
             <div class="section-title">📚 DOCUMENTATION</div>
             <div class="grid">
+                <a class="card" href="START-HERE.md" target="_blank" style="background: linear-gradient(135deg, #86efac 0%, #56ff9f 100%); color: #000; border: 3px solid #1a1a1a;">
+                    <div class="card-title" style="color: #000;">⭐ START HERE: BUILD YOUR CARTRIDGE</div>
+                    <div class="card-desc" style="color: #1a1a1a;">Quick-start for designers creating new FUNC games. Pick template, fork in 5 min, customize operators/prompts, test. 15-minute example included.</div>
+                    <div class="card-label" style="background: #000; color: #86efac;">START</div>
+                </a>
+
                 <a class="card" href="SHED-FRAME-INTEGRATION.md" target="_blank">
                     <div class="card-title">SHED-FRAME INTEGRATION</div>
                     <div class="card-desc">How shed-frame and func-orb-training work together. Data structure, workflow, connection guide.</div>
@@ -415,6 +450,54 @@
                     <div class="card-desc">MAJOR UX FIX: Tetrad controls now have dramatic visual effects - grid wave, ring flash, floating mode label, entity text labels. Controls feel POWERFUL and responsive.</div>
                     <div class="card-label">CRITICAL</div>
                 </a>
+
+                <a class="card" href="DSL-02-README.md" target="_blank">
+                    <div class="card-title">DSL-02 README</div>
+                    <div class="card-desc">Complete guide for designers: dual agent architecture, 6 DSL axes, three operators (SHED/INTEGRATE/GROUND), turn cycle, usage patterns, and integration.</div>
+                    <div class="card-label">DSL</div>
+                </a>
+
+                <a class="card" href="DSL-02-NEGATIVE-SPACE-ANALYSIS.md" target="_blank">
+                    <div class="card-title">NEGATIVE SPACE ANALYSIS (NEG-3)</div>
+                    <div class="card-desc">NEG-3 NSDS-Core framework applied to DSL-02. Defines what system is NOT, stop-doing ledger, kill criteria, dual homeostasis model.</div>
+                    <div class="card-label">DSL</div>
+                </a>
+
+                <a class="card" href="OBSERVER-PERCEPTION-PROTOCOL.md" target="_blank">
+                    <div class="card-title">OBSERVER PERCEPTION PROTOCOL</div>
+                    <div class="card-desc">Model OF = Model FOR architecture. Observer reads scene graph, analyzes, decides. Context isolation between INNER/OUTER agents. Targeted actions.</div>
+                    <div class="card-label">DSL</div>
+                </a>
+
+                <a class="card" href="OBSERVER-THREE-OPTIONS-PROTOCOL.md" target="_blank">
+                    <div class="card-title">THREE-OPTIONS PROTOCOL</div>
+                    <div class="card-desc">God's eye view generates SHED/INTEGRATE/GROUND options each turn. Agents choose based on axis homeostasis. Reflection prevents repetition pathology.</div>
+                    <div class="card-label">DSL</div>
+                </a>
+
+                <a class="card" href="DSL-02-DUAL-HOMEOSTASIS-ARCHITECTURE.md" target="_blank">
+                    <div class="card-title">DUAL HOMEOSTASIS ARCHITECTURE</div>
+                    <div class="card-desc">INNER sees inner axis poles, OUTER sees outer poles. Each agent self-regulates independently. Emergent balance from dual perspectives.</div>
+                    <div class="card-label">DSL</div>
+                </a>
+
+                <a class="card" href="DSL-02-DESIGNER-THEORY.md" target="_blank">
+                    <div class="card-title">DSL-02 DESIGNER THEORY</div>
+                    <div class="card-desc">Compositional practice through constraint and observation. Design patterns, intervention strategies, research questions, and practical tips for working with dual agents.</div>
+                    <div class="card-label">DSL</div>
+                </a>
+
+                <a class="card" href="FUNC-CARTRIDGE-SYSTEM.md" target="_blank">
+                    <div class="card-title">🎮 FUNC CARTRIDGE SYSTEM</div>
+                    <div class="card-desc">FUNC tools as Nintendo cartridges - modular design tools sharing spatial grid, chat, text operators. Comparison of DSL-02, CB, Func-Orb. What this affords designers.</div>
+                    <div class="card-label">SYSTEM</div>
+                </a>
+
+                <a class="card" href="DSL-02-INTEGRATION-SUMMARY.md" target="_blank">
+                    <div class="card-title">DSL-02 INTEGRATION SUMMARY</div>
+                    <div class="card-desc">Complete DSL-02 integration: files created, index updates, file structure, navigation paths, access points. Production-ready status.</div>
+                    <div class="card-label">DSL</div>
+                </a>
             </div>
         </div>
 
@@ -446,14 +529,20 @@
         <div class="preview-container">
             <div class="preview-header">
                 <div class="preview-title" id="previewTitle">Loading...</div>
-                <button class="close-btn" onclick="closePreview()">✕ CLOSE</button>
+                <div class="preview-actions">
+                    <button class="preview-btn" onclick="openInNewWindow()">↗ NEW WINDOW</button>
+                    <button class="preview-btn" onclick="closePreview()">✕ CLOSE</button>
+                </div>
             </div>
             <iframe class="preview-iframe" id="previewIframe"></iframe>
         </div>
     </div>
 
     <script>
+        let currentPreviewUrl = '';
+
         function openPreview(url, title) {
+            currentPreviewUrl = url;
             document.getElementById('previewTitle').textContent = title;
             document.getElementById('previewIframe').src = url;
             document.getElementById('previewFrame').classList.add('active');
@@ -462,6 +551,15 @@
         function closePreview() {
             document.getElementById('previewFrame').classList.remove('active');
             document.getElementById('previewIframe').src = '';
+            currentPreviewUrl = '';
+        }
+
+        function openInNewWindow() {
+            if (currentPreviewUrl) {
+                window.open(currentPreviewUrl, '_blank');
+                // Optionally close the preview after opening in new window
+                closePreview();
+            }
         }
 
         // Close preview on Escape key

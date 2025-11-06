@@ -1,0 +1,331 @@
+{
+  "timestamp": 1762330627614,
+  "starterPrompt": "orbital navigation of psychogeographics",
+  "turn": 35,
+  "entities": [
+    {
+      "id": "e2",
+      "type": "FENCE",
+      "icon": "🛡️",
+      "label": "Boundary Fence",
+      "row": 3,
+      "col": 3
+    },
+    {
+      "id": "e3",
+      "type": "ROAD",
+      "icon": "🛤️",
+      "label": "Path",
+      "row": 4,
+      "col": 3
+    },
+    {
+      "id": "e7",
+      "type": "FENCE",
+      "icon": "🛡️",
+      "label": "Boundary Fence",
+      "row": 4,
+      "col": 4
+    },
+    {
+      "id": "e8",
+      "type": "FENCE",
+      "icon": "🛡️",
+      "label": "Boundary Fence",
+      "row": 5,
+      "col": 4
+    },
+    {
+      "id": "e9",
+      "type": "FENCE",
+      "icon": "🛡️",
+      "label": "Boundary Fence",
+      "row": 5,
+      "col": 2
+    },
+    {
+      "id": "e10",
+      "type": "FENCE",
+      "icon": "🛡️",
+      "label": "Boundary Fence",
+      "row": 6,
+      "col": 2
+    },
+    {
+      "id": "e11",
+      "type": "FENCE",
+      "icon": "🛡️",
+      "label": "Boundary Fence",
+      "row": 5,
+      "col": 3
+    },
+    {
+      "id": "e12",
+      "type": "FENCE",
+      "icon": "🛡️",
+      "label": "Boundary Fence",
+      "row": 6,
+      "col": 3
+    },
+    {
+      "id": "e13",
+      "type": "FENCE",
+      "icon": "🛡️",
+      "label": "Boundary Fence",
+      "row": 5,
+      "col": 5
+    },
+    {
+      "id": "e14",
+      "type": "FENCE",
+      "icon": "🛡️",
+      "label": "Boundary Fence",
+      "row": 6,
+      "col": 4
+    },
+    {
+      "id": "e15",
+      "type": "FENCE",
+      "icon": "🛡️",
+      "label": "Boundary Fence",
+      "row": 7,
+      "col": 3
+    },
+    {
+      "id": "e16",
+      "type": "FENCE",
+      "icon": "🛡️",
+      "label": "Boundary Fence",
+      "row": 6,
+      "col": 5
+    },
+    {
+      "id": "e17",
+      "type": "FENCE",
+      "icon": "🛡️",
+      "label": "Boundary Fence",
+      "row": 6,
+      "col": 1
+    }
+  ],
+  "axisReadings": {
+    "I": {
+      "inner": 6,
+      "outer": 4
+    },
+    "E": {
+      "inner": 7,
+      "outer": 4
+    },
+    "L": {
+      "inner": 5,
+      "outer": 5
+    },
+    "D": {
+      "inner": 5,
+      "outer": 6
+    },
+    "P": {
+      "inner": 3,
+      "outer": 4
+    },
+    "O": {
+      "inner": 5,
+      "outer": 7
+    }
+  },
+  "memo": [
+    {
+      "turn": 0,
+      "text": "System initialized. Enter starter prompt and click START.",
+      "timestamp": 1762330395977
+    },
+    {
+      "turn": 0,
+      "text": "🎯 Started: \"orbital navigation of psychogeographics\"",
+      "timestamp": 1762330469182
+    },
+    {
+      "turn": 1,
+      "text": "T1 INNER: SHED → REMOVE\nSHED: Removing excess clutter to create negative space",
+      "timestamp": 1762330470569
+    },
+    {
+      "turn": 2,
+      "text": "T2 OUTER: GROUND → ADD\nGROUND: Organizing access to house",
+      "timestamp": 1762330491617
+    },
+    {
+      "turn": 3,
+      "text": "T3 INNER: SHED → REMOVE\nSHED: Removing excess clutter from the path area to create negative space.",
+      "timestamp": 1762330499554
+    },
+    {
+      "turn": 4,
+      "text": "T4 OUTER: GROUND → ADD\nGROUND: Establishing boundaries for a garden area around the house.",
+      "timestamp": 1762330503745
+    },
+    {
+      "turn": 5,
+      "text": "T5 INNER: SHED → REMOVE\nSHED: Removing boundary fence to create negative space",
+      "timestamp": 1762330507295
+    },
+    {
+      "turn": 6,
+      "text": "T6 OUTER: GROUND → ADD\nGROUND: Organizing access to house",
+      "timestamp": 1762330511125
+    },
+    {
+      "turn": 7,
+      "text": "T7 INNER: SHED → REMOVE\nSHED: Removing boundary fence to create negative space",
+      "timestamp": 1762330513940
+    },
+    {
+      "turn": 8,
+      "text": "T8 OUTER: GROUND → ADD\nGROUND: Adding a garden to enhance the external environment around the house.",
+      "timestamp": 1762330518192
+    },
+    {
+      "turn": 9,
+      "text": "T9 INNER: SHED → REMOVE\nSHED: Removing boundary fence to create negative space",
+      "timestamp": 1762330521548
+    },
+    {
+      "turn": 10,
+      "text": "T10 OUTER: INTEGRATE → ADD\nINTEGRATE: Connecting the garden to the boundary for defined space.",
+      "timestamp": 1762330525667
+    },
+    {
+      "turn": 11,
+      "text": "T11 INNER: SHED → REMOVE\nSHED: Removing boundary fence to create negative space",
+      "timestamp": 1762330529213
+    },
+    {
+      "turn": 12,
+      "text": "T12 OUTER: INTEGRATE → ADD\nINTEGRATE: Connecting the garden to the boundary for defined space.",
+      "timestamp": 1762330533470
+    },
+    {
+      "turn": 13,
+      "text": "T13 INNER: SHED → REMOVE\nSHED: Removing one boundary fence to create negative space",
+      "timestamp": 1762330536571
+    },
+    {
+      "turn": 14,
+      "text": "T14 OUTER: INTEGRATE → ADD\nINTEGRATE: Connecting the garden to the boundary by adding a fence for defined space.",
+      "timestamp": 1762330540841
+    },
+    {
+      "turn": 15,
+      "text": "T15 INNER: SHED → REMOVE\nSHED: Removing one boundary fence to create negative space",
+      "timestamp": 1762330543997
+    },
+    {
+      "turn": 16,
+      "text": "T16 OUTER: INTEGRATE → ADD\nINTEGRATE: Connecting the garden to the boundary by adding a fence for defined space.",
+      "timestamp": 1762330549321
+    },
+    {
+      "turn": 17,
+      "text": "T17 INNER: SHED → REMOVE\nSHED: Removing one boundary fence to create negative space",
+      "timestamp": 1762330552525
+    },
+    {
+      "turn": 18,
+      "text": "T18 OUTER: INTEGRATE → ADD\nINTEGRATE: Connecting the garden to the boundary by adding a fence for defined space.",
+      "timestamp": 1762330556644
+    },
+    {
+      "turn": 19,
+      "text": "T19 INNER: SHED → REMOVE\nSHED: Removing one boundary fence to create negative space",
+      "timestamp": 1762330559980
+    },
+    {
+      "turn": 20,
+      "text": "T20 OUTER: INTEGRATE → ADD\nINTEGRATE: Adding a fence to define the boundary and connect the garden space.",
+      "timestamp": 1762330564833
+    },
+    {
+      "turn": 21,
+      "text": "T21 INNER: SHED → REMOVE\nSHED: Removing one boundary fence to create negative space",
+      "timestamp": 1762330568479
+    },
+    {
+      "turn": 22,
+      "text": "T22 OUTER: INTEGRATE → ADD\nINTEGRATE: Adding a fence to define the boundary and connect the garden space.",
+      "timestamp": 1762330572940
+    },
+    {
+      "turn": 23,
+      "text": "T23 INNER: SHED → REMOVE\nSHED: Removing excess boundary fence to create negative space",
+      "timestamp": 1762330576663
+    },
+    {
+      "turn": 24,
+      "text": "T24 OUTER: INTEGRATE → ADD\nINTEGRATE: Adding a fence to connect the existing boundary and define the garden space.",
+      "timestamp": 1762330580700
+    },
+    {
+      "turn": 25,
+      "text": "T25 INNER: SHED → REMOVE\nSHED: Removing excess boundary fence to create negative space",
+      "timestamp": 1762330586082
+    },
+    {
+      "turn": 26,
+      "text": "T26 OUTER: INTEGRATE → ADD\nINTEGRATE: Adding a fence to connect the existing boundary and define the garden space.",
+      "timestamp": 1762330590625
+    },
+    {
+      "turn": 27,
+      "text": "T27 INNER: SHED → REMOVE\nSHED: Removing excess boundary fence to create negative space",
+      "timestamp": 1762330593905
+    },
+    {
+      "turn": 28,
+      "text": "T28 OUTER: INTEGRATE → ADD\nINTEGRATE: Adding a fence to connect the existing boundary and define the garden space.",
+      "timestamp": 1762330597368
+    },
+    {
+      "turn": 29,
+      "text": "T29 INNER: SHED → REMOVE\nSHED: Removing excess boundary fence to create negative space",
+      "timestamp": 1762330603676
+    },
+    {
+      "turn": 30,
+      "text": "T30 OUTER: INTEGRATE → ADD\nINTEGRATE: Adding a fence to connect the existing boundary and define the garden space.",
+      "timestamp": 1762330607951
+    },
+    {
+      "turn": 30,
+      "text": "💬 User: i want more dragons",
+      "timestamp": 1762330609108
+    },
+    {
+      "turn": 31,
+      "text": "T31 INNER: SHED → REMOVE\nSHED: Removing excess boundary fence to create negative space",
+      "timestamp": 1762330610837
+    },
+    {
+      "turn": 32,
+      "text": "T32 OUTER: INTEGRATE → ADD\nINTEGRATE: Adding a fence to connect the existing boundary and define the garden space.",
+      "timestamp": 1762330615031
+    },
+    {
+      "turn": 33,
+      "text": "T33 INNER: SHED → REMOVE\nSHED: Removing excess boundary fence to create negative space",
+      "timestamp": 1762330618263
+    },
+    {
+      "turn": 34,
+      "text": "T34 OUTER: INTEGRATE → ADD\nINTEGRATE: Adding a fence to connect the existing boundary and define the garden space.",
+      "timestamp": 1762330622363
+    },
+    {
+      "turn": 35,
+      "text": "T35 INNER: SHED → REMOVE\nSHED: Removing excess boundary fence to create negative space",
+      "timestamp": 1762330625805
+    }
+  ],
+  "innerMessages": [],
+  "outerMessages": []
+}
