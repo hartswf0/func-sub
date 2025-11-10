@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training Grounds – Continuous Radar Stream</title>
+<style>
+:root {
+    --bg: #0a0a0a;
+    --surface: #1a1a1a;
+    --text: #f0f0f0;
+    --text-dim: #888;
+    --accent: #00d4ff;
+    --success: #00ff88;
+    --shadow: rgba(0,0,0,0.8);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    touch-action: manipulation;
+}
+
+.container { 
+    max-width: 100vw; 
+    min-height: 100vh; 
+    padding: 1rem; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 1rem; 
+}
+
+header {
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--surface);
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.control-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    background: var(--surface);
+    padding: 0.5rem;
+    border-radius: 6px;
+}
+
+button {
+    padding: 0.5rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--text-dim);
+    color: var(--text);
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+button.active { 
+    border-color: var(--accent); 
+    box-shadow: 0 0 8px var(--accent); 
+}
+
+input[type="range"] {
+    width: 100px;
+    background: var(--surface);
+    border-radius: 4px;
+    height: 4px;
+    -webkit-appearance: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+label { font-size: 0.8rem; color: var(--text-dim); }
+
+main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 1000px) {
+    main { grid-template-columns: 1fr 1fr; }
+}
+
+.radar-container {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 1rem;
+    position: relative;
+    min-height: 400px;
+}
+
+.radar-title {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.1em;
+}
+
+svg { width: 100%; height: auto; }
+
+.status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    padding: 0.5rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    border-top: 1px solid var(--shadow);
+}
+
+/* SVG Filters */
+#glow { 
+    position: absolute; 
+    width: 0; 
+    height: 0; 
+    overflow: hidden; 
+}
+</style>
+<base target="_blank">
+</head>
+<body>
+<div class="container">
+    <header>
+        <div class="controls">
+            <div class="control-group">
+                <button id="playPause" onclick="togglePlay()">⏸️ PAUSE</button>
+                <button onclick="resetStream()">🔄 RESET</button>
+            </div>
+            <div class="control-group">
+                <label>Speed: <span id="speedValue">1.0</span>x</label>
+                <input type="range" id="speedControl" min="0.1" max="5" step="0.1" value="1" oninput="updateSpeed(this.value)">
+            </div>
+            <div class="control-group">
+                <label>Window: <span id="windowValue">30</span></label>
+                <input type="range" id="windowControl" min="10" max="100" step="5" value="30" oninput="updateWindow(this.value)">
+            </div>
+            <div class="control-group">
+                <label>Opacity: <span id="opacityValue">0.3</span></label>
+                <input type="range" id="opacityControl" min="0.1" max="0.8" step="0.05" value="0.3" oninput="updateOpacity(this.value)">
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="radar-container">
+            <div class="radar-title">12-AXIS CONTINUOUS STREAM</div>
+            <svg id="pairs-radar" viewBox="0 0 400 400">
+                <defs>
+                    <filter id="glow">
+                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+            </svg>
+        </div>
+        <div class="radar-container">
+            <div class="radar-title">6-AXIS META STREAM</div>
+            <svg id="meta-radar" viewBox="0 0 400 400">
+                <defs>
+                    <filter id="glow">
+                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+            </svg>
+        </div>
+    </main>
+
+    <div class="status-bar">
+        <span>STAGE: <span id="currentStage">INTEGRATE</span></span>
+        <span>TIME: <span id="timeCounter">0</span></span>
+        <span>FPS: <span id="fpsCounter">60</span></span>
+    </div>
+</div>
+
+<script>
+const CONFIG = {
+    center: 200,
+    radius: 160,
+    levels: 9,
+    maxValue: 9,
+    bufferSize: 30,
+    speed: 1.0,
+    opacity: 0.3,
+    isPlaying: true
+};
+
+// Synthetic manifold generator
+class DataStream {
+    constructor() {
+        this.time = 0;
+        this.phases = { T_1: [], T0: [], T_P1: [] };
+        this.initBuffers();
+    }
+
+    initBuffers() {
+        const seedPairs = [4,5,6,7,8,9,5,6,7,8,9,9];
+        const seedMeta = [5,6,7,8,9,9];
+        
+        for (let i = 0; i < CONFIG.bufferSize; i++) {
+            this.phases.T_1.push([...seedPairs].map(v => v + Math.random() * 2 - 1));
+            this.phases.T0.push([...seedPairs].map(v => v + Math.random() * 2 - 1));
+            this.phases.T_P1.push([...seedPairs].map(v => v + Math.random() * 2 - 1));
+        }
+    }
+
+    generateNext() {
+        this.time++;
+        
+        // Generate correlated next step using cyclic manifold
+        const lastT0 = this.phases.T0[this.phases.T0.length - 1];
+        const lastTP1 = this.phases.T_P1[this.phases.T_P1.length - 1];
+        
+        // T0 follows T+1 with inertia
+        const nextT0 = lastT0.map((val, i) => {
+            const target = lastTP1[i];
+            return Math.max(1, Math.min(9, val + (target - val) * 0.1 + (Math.random() - 0.5) * 0.5));
+        });
+        
+        // T+1 drifts with momentum along manifold
+        const nextTP1 = lastTP1.map((val, i) => {
+            const trend = (Math.sin(this.time * 0.1 + i * 0.5) + 1) * 0.5;
+            return Math.max(1, Math.min(9, val + (trend - 0.5) * 0.3 + (Math.random() - 0.5) * 0.3));
+        });
+        
+        // T-1 is delayed T0
+        const nextT1 = this.phases.T0[Math.max(0, this.phases.T0.length - 5)] || lastT0;
+        
+        // Add to ring buffers
+        this.phases.T_1.push([...nextT1]);
+        this.phases.T0.push([...nextT0]);
+        this.phases.T_P1.push([...nextTP1]);
+        
+        // Keep buffer size constant
+        if (this.phases.T_1.length > CONFIG.bufferSize) {
+            this.phases.T_1.shift();
+            this.phases.T0.shift();
+            this.phases.T_P1.shift();
+        }
+        
+        return { T_1: nextT1, T0: nextT0, T_P1: nextTP1 };
+    }
+}
+
+const stream = new DataStream();
+
+function drawContinuousRadar(svgId, type) {
+    const svg = document.getElementById(svgId);
+    svg.innerHTML = svg.querySelector('defs').outerHTML;
+    
+    const data = {
+        axes: type === 'pairs' ? 
+            ['Instinct','Reason','Seen','Unseen','Ideas','Ideology','Source','Resource','Heart','Head','Parts','Whole'] :
+            ['Identity','Experience','Language','Domain','Purpose','Order']
+    };
+    
+    const axisCount = data.axes.length;
+    const angleStep = (Math.PI * 2) / axisCount;
+    
+    // Static grid
+    for (let level = 1; level <= CONFIG.levels; level++) {
+        const r = (CONFIG.radius / CONFIG.levels) * level;
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', CONFIG.center);
+        circle.setAttribute('cy', CONFIG.center);
+        circle.setAttribute('r', r);
+        circle.setAttribute('fill', 'none');
+        circle.setAttribute('stroke', '#222');
+        svg.appendChild(circle);
+    }
+
+    // Axes and labels
+    data.axes.forEach((axis, i) => {
+        const angle = angleStep * i - Math.PI / 2;
+        const x = CONFIG.center + Math.cos(angle) * CONFIG.radius;
+        const y = CONFIG.center + Math.sin(angle) * CONFIG.radius;
+        
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', CONFIG.center);
+        line.setAttribute('y1', CONFIG.center);
+        line.setAttribute('x2', x);
+        line.setAttribute('y2', y);
+        line.setAttribute('stroke', '#333');
+        svg.appendChild(line);
+
+        const labelX = CONFIG.center + Math.cos(angle) * (CONFIG.radius + 20);
+        const labelY = CONFIG.center + Math.sin(angle) * (CONFIG.radius + 20);
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', labelX);
+        text.setAttribute('y', labelY);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('fill', '#aaa');
+        text.setAttribute('font-size', axisCount > 6 ? '9' : '11');
+        text.textContent = axis.toUpperCase();
+        svg.appendChild(text);
+    });
+
+    // Historical traces (oldest first)
+    const historyCount = Math.min(stream.phases.T0.length, CONFIG.bufferSize);
+    for (let h = 0; h < historyCount; h += 2) {
+        const opacity = (h / historyCount) * CONFIG.opacity;
+        drawTimeSlice(svg, h, `rgba(0, 212, 255, ${opacity})`);
+    }
+
+    // Present (T0) bold
+    drawTimeSlice(svg, historyCount - 1, '#00d4ff', 2.5, true);
+
+    // Future (T+1) outline
+    drawTimeSlice(svg, historyCount - 1, 'rgba(0, 255, 136, 0.6)', 1.5, false, true);
+}
+
+function drawTimeSlice(svg, index, color, strokeWidth = 1, filter = false, isFuture = false) {
+    const data = isFuture ? stream.phases.T_P1[index] : stream.phases.T0[index];
+    const angleStep = (Math.PI * 2) / data.length;
+    
+    const points = data.map((value, i) => {
+        const angle = angleStep * i - Math.PI / 2;
+        const r = (value / CONFIG.maxValue) * CONFIG.radius;
+        const x = CONFIG.center + Math.cos(angle) * r;
+        const y = CONFIG.center + Math.sin(angle) * r;
+        return `${x},${y}`;
+    }).join(' ');
+
+    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    polygon.setAttribute('points', points);
+    polygon.setAttribute('fill', isFuture ? 'none' : color.replace('rgb', 'rgba').replace(')', ', 0.1)'));
+    polygon.setAttribute('stroke', color);
+    polygon.setAttribute('stroke-width', strokeWidth);
+    if (filter) polygon.setAttribute('filter', 'url(#glow)');
+    svg.appendChild(polygon);
+}
+
+// Animation loop
+let lastTime = 0;
+let frameCount = 0;
+let fpsTime = 0;
+
+function animate(currentTime) {
+    if (!CONFIG.isPlaying) {
+        requestAnimationFrame(animate);
+        return;
+    }
+
+    const deltaTime = currentTime - lastTime;
+    const interval = 1000 / (60 * CONFIG.speed);
+    
+    if (deltaTime > interval) {
+        stream.generateNext();
+        drawContinuousRadar('pairs-radar', 'pairs');
+        drawContinuousRadar('meta-radar', 'meta');
+        
+        // Update UI
+        document.getElementById('timeCounter').textContent = stream.time;
+        
+        // FPS
+        frameCount++;
+        if (currentTime - fpsTime > 1000) {
+            document.getElementById('fpsCounter').textContent = frameCount;
+            frameCount = 0;
+            fpsTime = currentTime;
+        }
+        
+        lastTime = currentTime;
+    }
+    
+    requestAnimationFrame(animate);
+}
+
+// Controls
+function togglePlay() {
+    CONFIG.isPlaying = !CONFIG.isPlaying;
+    document.getElementById('playPause').textContent = CONFIG.isPlaying ? '⏸️ PAUSE' : '▶️ PLAY';
+}
+
+function resetStream() {
+    stream.time = 0;
+    stream.initBuffers();
+}
+
+function updateSpeed(value) {
+    CONFIG.speed = parseFloat(value);
+    document.getElementById('speedValue').textContent = value;
+}
+
+function updateWindow(value) {
+    CONFIG.bufferSize = parseInt(value);
+    document.getElementById('windowValue').textContent = value;
+    Object.keys(stream.phases).forEach(key => {
+        if (stream.phases[key].length > value) {
+            stream.phases[key] = stream.phases[key].slice(-value);
+        }
+    });
+}
+
+function updateOpacity(value) {
+    CONFIG.opacity = parseFloat(value);
+    document.getElementById('opacityValue').textContent = value;
+}
+
+// Start
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
