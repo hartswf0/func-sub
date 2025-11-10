@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training Grounds – Morphic Constellation</title>
+<style>
+:root {
+    --bg: #080808;
+    --surface: rgba(12, 12, 16, 0.85);
+    --text: #e0e0ff;
+    --text-dim: #889;
+    --axis-cold: #00aaff;
+    --axis-warm: #ff5500;
+    --axis-extreme: #ff00ff;
+    --imprint: #303030;
+    --present-glow: #00ffff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: radial-gradient(ellipse at center, #0a0a1a 0%, var(--bg) 100%);
+    color: var(--text);
+    overflow: hidden;
+    touch-action: manipulation;
+}
+
+.container { 
+    width: 100vw; 
+    height: 100vh; 
+    display: flex; 
+    flex-direction: column; 
+}
+
+header {
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    padding: 0.5rem 1rem;
+    z-index: 100;
+    border-bottom: 1px solid rgba(0, 170, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    font-size: 0.8rem;
+}
+
+.control-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    background: rgba(0,0,0,0.4);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+}
+
+button {
+    padding: 0.4rem 0.8rem;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--axis-cold);
+    color: var(--text);
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+input[type="range"] {
+    width: 100px;
+    background: transparent;
+    -webkit-appearance: none;
+    height: 4px;
+}
+
+main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    padding: 0.5rem;
+}
+
+@media (min-width: 1000px) {
+    main { grid-template-columns: 1fr 1fr; }
+}
+
+.radar-container {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 0.5rem;
+    position: relative;
+    border: 1px solid rgba(0,170,255,0.1);
+}
+
+svg { width: 100%; height: 100%; display: block; }
+
+.status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0; right: 0;
+    background: var(--surface);
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+}
+
+.axis-label {
+    fill: #aaa;
+    font-size: 10px;
+    font-weight: bold;
+    text-anchor: middle;
+}
+
+.imprint-swirl {
+    fill: none;
+    stroke-linecap: round;
+}
+
+.constellation-node {
+    fill: var(--present-glow);
+    stroke: white;
+    stroke-width: 0.5;
+}
+
+.constellation-link {
+    stroke: var(--present-glow);
+    stroke-width: 0.8;
+    opacity: 0.6;
+}
+</style>
+<base target="_blank">
+</head>
+<body>
+<div class="container">
+    <header>
+        <div class="controls">
+            <button id="playBtn" onclick="togglePlay()">⏸️</button>
+            <button onclick="exportSVG('pairs-worm')">📥 Export Pairs</button>
+            <button onclick="exportSVG('meta-worm')">📥 Export Meta</button>
+            <div class="control-group">
+                <label>Speed</label>
+                <input type="range" id="speed" min="0.1" max="10" step="0.1" value="1">
+            </div>
+            <div class="control-group">
+                <label>Imprint</label>
+                <input type="range" id="imprint" min="0.1" max="1" step="0.05" value="0.5">
+            </div>
+            <div class="control-group">
+                <label>Date</label>
+                <input type="date" id="datePicker" value="2024-01-01">
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="radar-container">
+            <svg id="pairs-worm" viewBox="0 0 400 400">
+                <defs>
+                    <filter id="soft-glow">
+                        <feGaussianBlur stdDeviation="2" result="blur"/>
+                        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                </defs>
+            </svg>
+        </div>
+        <div class="radar-container">
+            <svg id="meta-worm" viewBox="0 0 400 400">
+                <defs>
+                    <filter id="soft-glow2">
+                        <feGaussianBlur stdDeviation="2" result="blur"/>
+                        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                </defs>
+            </svg>
+        </div>
+    </main>
+
+    <div class="status-bar">
+        <span><span id="stageDisplay">SHED</span> STAGE</span>
+        <span><span id="dateDisplay">2024-01-01 00:00</span></span>
+        <span>Depth: <span id="layerDepth">0</span></span>
+    </div>
+</div>
+
+<script>
+const CONFIG = {
+    center: 200,
+    radius: 160,
+    levels: 9,
+    maxValue: 9,
+    bufferSize: 72,
+    speed: 1,
+    imprintStrength: 0.5,
+    startDate: new Date('2024-01-01'),
+    currentHour: 0
+};
+
+class DateStream {
+    constructor() {
+        this.buffer = { pairs: [], meta: [] };
+        this.axes = {
+            pairs: ['Instinct','Reason','Seen','Unseen','Ideas','Ideology','Source','Resource','Heart','Head','Parts','Whole'],
+            meta: ['Identity','Experience','Language','Domain','Purpose','Order']
+        };
+        this.initBuffers();
+    }
+
+    initBuffers() {
+        for (let i = 0; i < CONFIG.bufferSize; i++) this.updateBuffer();
+    }
+
+    generateSyntheticHour() {
+        const t = CONFIG.currentHour * 0.1;
+        const cycles = {
+            daily: Math.sin(t * 0.5) * 0.3,
+            weekly: Math.sin(t * 0.15) * 0.4,
+            monthly: Math.sin(t * 0.04) * 0.5
+        };
+
+        const pairs = {
+            Instinct: 5 + cycles.daily + Math.random() * 0.5,
+            Reason: 6 + cycles.weekly + Math.random() * 0.3,
+            Seen: 7 + cycles.monthly + Math.random() * 0.4,
+            Unseen: 6 + cycles.daily * 0.5 + Math.random() * 0.6,
+            Ideas: 8 + cycles.weekly * 0.7 + Math.random() * 0.2,
+            Ideology: 5 + cycles.monthly * 0.8 + Math.random() * 0.5,
+            Source: 6 + cycles.daily + Math.random() * 0.4,
+            Resource: 7 + cycles.weekly + Math.random() * 0.3,
+            Heart: 5 + cycles.monthly + Math.random() * 0.6,
+            Head: 6 + cycles.daily * 0.8 + Math.random() * 0.4,
+            Parts: 7 + cycles.weekly + Math.random() * 0.3,
+            Whole: 8 + cycles.monthly * 0.6 + Math.random() * 0.2
+        };
+        
+        Object.keys(pairs).forEach(k => pairs[k] = Math.max(1, Math.min(9, pairs[k])));
+
+        const meta = {
+            Identity: (pairs.Instinct + pairs.Reason) / 2,
+            Experience: (pairs.Seen + pairs.Unseen) / 2,
+            Language: (pairs.Ideas + pairs.Ideology) / 2,
+            Domain: (pairs.Source + pairs.Resource) / 2,
+            Purpose: (pairs.Heart + pairs.Head) / 2,
+            Order: (pairs.Parts + pairs.Whole) / 2
+        };
+
+        return { pairs, meta };
+    }
+
+    updateBuffer() {
+        const data = this.generateSyntheticHour();
+        this.buffer.pairs.push(data.pairs);
+        this.buffer.meta.push(data.meta);
+        if (this.buffer.pairs.length > CONFIG.bufferSize) {
+            this.buffer.pairs.shift();
+            this.buffer.meta.shift();
+        }
+    }
+
+    getCurrentHour() {
+        const hour = Math.floor(CONFIG.currentHour);
+        const date = new Date(CONFIG.startDate);
+        date.setHours(date.getHours() + hour);
+        return { hour, date, data: this.buffer[this.buffer.length - 1] };
+    }
+}
+
+const stream = new DateStream();
+
+function getHeatmapColor(value) {
+    const intensity = (value - 1) / 8;
+    if (intensity < 0.3) return `hsl(220, 70%, ${30 + intensity * 30}%)`;
+    if (intensity < 0.6) return `hsl(40, 80%, ${40 + intensity * 20}%)`;
+    return `hsl(320, 90%, ${40 + intensity * 15}%)`;
+}
+
+function drawFingerprintRidges(svg, data, age) {
+    const axisCount = data.length;
+    const angleStep = (Math.PI * 2) / axisCount;
+    
+    for (let ring = 0; ring < 5; ring++) {
+        const opacity = (1 - age) * CONFIG.imprintStrength * (1 - ring * 0.15);
+        const offset = ring * 0.8;
+        
+        let path = '';
+        for (let i = 0; i < axisCount; i++) {
+            const angle = angleStep * i - Math.PI / 2 + offset;
+            const value = data[i] + Math.sin(age * Math.PI * 2 + ring) * 0.3;
+            const r = (Math.max(1, Math.min(9, value)) / CONFIG.maxValue) * CONFIG.radius;
+            const x = CONFIG.center + Math.cos(angle) * r;
+            const y = CONFIG.center + Math.sin(angle) * r;
+            path += `${i === 0 ? 'M' : 'L'} ${x},${y}`;
+        }
+        path = path.split(' ').filter((_, i) => i % 2 === 0 || i % 3 === 0).join(' ');
+        path += ' Z';
+        
+        const ridge = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        ridge.setAttribute('d', path);
+        ridge.setAttribute('stroke', getHeatmapColor(5 + ring));
+        ridge.setAttribute('stroke-width', 0.8);
+        ridge.style.opacity = opacity;
+        ridge.setAttribute('class', 'imprint-swirl');
+        svg.appendChild(ridge);
+    }
+}
+
+function drawConstellation(svg, data) {
+    const axisKeys = Object.keys(data);
+    const axisCount = axisKeys.length;
+    const angleStep = (Math.PI * 2) / axisCount;
+    const nodes = [];
+    
+    axisKeys.forEach((key, i) => {
+        const angle = angleStep * i - Math.PI / 2;
+        const r = (data[key] / CONFIG.maxValue) * CONFIG.radius;
+        const x = CONFIG.center + Math.cos(angle) * r;
+        const y = CONFIG.center + Math.sin(angle) * r;
+        nodes.push({ x, y, value: data[key] });
+        
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', x);
+        circle.setAttribute('cy', y);
+        circle.setAttribute('r', 3 + (data[key] / 9) * 2);
+        circle.setAttribute('fill', getHeatmapColor(data[key]));
+        circle.setAttribute('class', 'constellation-node');
+        svg.appendChild(circle);
+        
+        const labelX = CONFIG.center + Math.cos(angle) * (CONFIG.radius + 18);
+        const labelY = CONFIG.center + Math.sin(angle) * (CONFIG.radius + 18);
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', labelX);
+        text.setAttribute('y', labelY);
+        text.setAttribute('class', 'axis-label');
+        text.textContent = key.toUpperCase();
+        svg.appendChild(text);
+    });
+    
+    for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+            const distance = Math.sqrt((nodes[i].x - nodes[j].x) ** 2 + (nodes[i].y - nodes[j].y) ** 2);
+            if (distance < 120) {
+                const link = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                link.setAttribute('x1', nodes[i].x);
+                link.setAttribute('y1', nodes[i].y);
+                link.setAttribute('x2', nodes[j].x);
+                link.setAttribute('y2', nodes[j].y);
+                link.setAttribute('class', 'constellation-link');
+                svg.appendChild(link);
+            }
+        }
+    }
+}
+
+function renderMorphicVisualization(svgId, type) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 400 400');
+    
+    for (let level = 1; level <= CONFIG.levels; level++) {
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', CONFIG.center);
+        circle.setAttribute('cy', CONFIG.center);
+        circle.setAttribute('r', (CONFIG.radius / CONFIG.levels) * level);
+        circle.setAttribute('fill', 'none');
+        circle.setAttribute('stroke', '#222');
+        svg.appendChild(circle);
+    }
+    
+    const buffer = type === 'pairs' ? stream.buffer.pairs : stream.buffer.meta;
+    buffer.forEach((data, age) => {
+        if (age < buffer.length - 5) {
+            const values = Object.values(data);
+            drawFingerprintRidges(svg, values, age / buffer.length);
+        }
+    });
+    
+    const present = buffer[buffer.length - 1];
+    drawConstellation(svg, present);
+    
+    const container = document.getElementById(svgId);
+    container.innerHTML = container.querySelector('defs')?.outerHTML || '';
+    container.appendChild(svg);
+}
+
+function exportSVG(svgId) {
+    const svg = document.getElementById(svgId).querySelector('svg');
+    const blob = new Blob([svg.outerHTML], { type: 'image/svg+xml' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${svgId}_${stream.getCurrentHour().date.toISOString().slice(0,10)}.svg`;
+    a.click();
+}
+
+let isPlaying = true;
+let lastFrame = 0;
+
+function animate(timestamp) {
+    if (!isPlaying) return requestAnimationFrame(animate);
+    
+    const elapsed = timestamp - lastFrame;
+    if (elapsed > 100) {
+        CONFIG.currentHour += CONFIG.speed;
+        stream.updateBuffer();
+        renderMorphicVisualization('pairs-worm', 'pairs');
+        renderMorphicVisualization('meta-worm', 'meta');
+        
+        const { date } = stream.getCurrentHour();
+        document.getElementById('dateDisplay').textContent = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        
+        lastFrame = timestamp;
+    }
+    requestAnimationFrame(animate);
+}
+
+function togglePlay() {
+    isPlaying = !isPlaying;
+    document.getElementById('playBtn').textContent = isPlaying ? '⏸️' : '▶️';
+}
+
+// Controls
+document.getElementById('speed').addEventListener('input', (e) => CONFIG.speed = parseFloat(e.target.value));
+document.getElementById('imprint').addEventListener('input', (e) => CONFIG.imprintStrength = parseFloat(e.target.value));
+document.getElementById('datePicker').addEventListener('change', (e) => {
+    CONFIG.startDate = new Date(e.target.value);
+    CONFIG.currentHour = 0;
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === ' ') togglePlay();
+    if (e.key === 'e') exportSVG('pairs-worm');
+});
+
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
