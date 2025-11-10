@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Holographic Radar Sequencer v2.3</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        :root {
+            --shed-color: #ff6b6b;
+            --integrate-color: #38bdf8;
+            --ground-color: #00ff88;
+            --past-color: #a78bfa;
+            --future-color: #4ade80;
+            --accent-glow: 0 0 20px currentColor;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #070e14;
+            color: #e9f4ff;
+            overflow: hidden;
+            height: 100vh;
+            animation: breathe 12s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.02); }
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+        }
+
+        header {
+            padding: 0.6rem;
+            background: rgba(10, 15, 20, 0.95);
+            border-bottom: 2px solid var(--integrate-color);
+            backdrop-filter: blur(20px);
+            z-index: 100;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 0.6rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid transparent;
+            color: #667;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .mode-btn.active {
+            border-color: currentColor;
+            color: white;
+            box-shadow: var(--accent-glow);
+        }
+
+        .mode-btn.shed.active { color: var(--shed-color); }
+        .mode-btn.integrate.active { color: var(--integrate-color); }
+        .mode-btn.ground.active { color: var(--ground-color); }
+
+        .global-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+        }
+
+        input[type="range"] {
+            width: 80px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--integrate-color);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--integrate-color);
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px;
+            padding: 1px;
+            background: rgba(56, 189, 248, 0.05);
+        }
+
+        .deck {
+            position: relative;
+            background: radial-gradient(circle at center, rgba(15, 20, 25, 0.8), #070e14);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .deck-header {
+            padding: 0.5rem;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .deck-title {
+            font-size: 0.8rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        .deck-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .deck-btn {
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            cursor: pointer;
+            color: #667;
+            font-size: 0.7rem;
+            transition: all 0.2s;
+        }
+
+        .deck-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .deck-btn.active {
+            color: var(--integrate-color);
+        }
+
+        .radar-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        svg {
+            width: 95%;
+            height: 95%;
+            filter: drop-shadow(0 0 20px rgba(56, 189, 248, 0.3));
+        }
+
+        .axis-node {
+            fill: rgba(255, 255, 255, 0.15);
+            stroke: #667;
+            stroke-width: 1.5;
+            cursor: grab;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .axis-node:active {
+            cursor: grabbing;
+            transform: scale(1.3);
+            filter: drop-shadow(0 0 15px var(--integrate-color));
+        }
+
+        .trace-path {
+            fill: none;
+            stroke-width: 1.5;
+            opacity: 0.25;
+            transition: opacity 2s ease-out;
+        }
+
+        .current-path {
+            fill: rgba(56, 189, 248, 0.1);
+            stroke: var(--integrate-color);
+            stroke-width: 2.5;
+            filter: url(#glow);
+            transition: d 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .playhead-arm {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 44%;
+            background: linear-gradient(transparent, var(--integrate-color), transparent);
+            transform-origin: top center;
+            opacity: 0;
+            transition: opacity 0.5s;
+            animation: sweep 8s cubic-bezier(0.4, 0, 0.2, 1) infinite, playheadGlow 2s ease-in-out infinite;
+        }
+
+        .playhead-arm.active {
+            opacity: 0.6;
+        }
+
+        @keyframes sweep {
+            from { transform: translate(-50%, 0) rotate(0deg); }
+            to { transform: translate(-50%, 0) rotate(360deg); }
+        }
+
+        @keyframes playheadGlow {
+            0%, 100% { box-shadow: 0 0 5px currentColor; }
+            50% { box-shadow: 0 0 15px currentColor; }
+        }
+
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 15, 20, 0.98);
+            padding: 0.5rem 1rem;
+            font-size: 0.7rem;
+            border-top: 2px solid var(--integrate-color);
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 2rem;
+        }
+
+        .step-display {
+            font-size: 1.2rem;
+            color: var(--integrate-color);
+            font-weight: bold;
+        }
+
+        .audio-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #070e14;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .audio-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        button.start-button {
+            padding: 2rem 4rem;
+            background: var(--integrate-color);
+            color: #070e14;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 40px var(--integrate-color);
+            animation: buttonPulse 1.5s infinite;
+        }
+
+        @keyframes buttonPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <div class="audio-overlay" id="audioOverlay">
+        <button class="start-button" onclick="startAudioSystem()">START AUDIO</button>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="mode-selector">
+                <button class="mode-btn shed" data-mode="SHED">SHED</button>
+                <button class="mode-btn integrate active" data-mode="INTEGRATE">INTEGRATE</button>
+                <button class="mode-btn ground" data-mode="GROUND">GROUND</button>
+            </div>
+            <div class="global-controls">
+                <button class="mode-btn" id="playBtn" style="flex: 0.5;">▶ PLAY</button>
+                <div class="slider-group">
+                    <span>BPM</span>
+                    <input type="range" id="bpmSlider" min="40" max="160" value="90">
+                    <span id="bpmValue">90</span>
+                </div>
+                <div class="slider-group">
+                    <span>EVOLVE</span>
+                    <input type="range" id="evolveSlider" min="0" max="100" value="35">
+                    <span id="evolveValue">35</span>
+                </div>
+                <div class="slider-group">
+                    <span>CHAOS</span>
+                    <input type="range" id="chaosSlider" min="0" max="100" value="18">
+                    <span id="chaosValue">18</span>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div class="deck" id="pairsDeck">
+                <div class="deck-header">
+                    <div class="deck-title">12-AXIS MANIFOLD</div>
+                    <div class="deck-controls">
+                        <button class="deck-btn" data-action="nudge">↻</button>
+                        <button class="deck-btn" data-action="solo">S</button>
+                        <button class="deck-btn" data-action="mute">M</button>
+                    </div>
+                </div>
+                <div class="radar-wrapper">
+                    <svg id="pairsSvg" viewBox="-250 -250 500 500">
+                        <defs>
+                            <filter id="glow">
+                                <feGaussianBlur stdDeviation="4"/>
+                                <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+                            </filter>
+                        </defs>
+                    </svg>
+                    <div class="playhead-arm" id="pairsPlayhead"></div>
+                </div>
+            </div>
+
+            <div class="deck" id="metaDeck">
+                <div class="deck-header">
+                    <div class="deck-title">6-AXIS META</div>
+                    <div class="deck-controls">
+                        <button class="deck-btn" data-action="nudge">↻</button>
+                        <button class="deck-btn" data-action="solo">S</button>
+                        <button class="deck-btn" data-action="mute">M</button>
+                    </div>
+                </div>
+                <div class="radar-wrapper">
+                    <svg id="metaSvg" viewBox="-250 -250 500 500">
+                        <defs>
+                            <filter id="glow2">
+                                <feGaussianBlur stdDeviation="4"/>
+                                <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+                            </filter>
+                        </defs>
+                    </svg>
+                    <div class="playhead-arm" id="metaPlayhead"></div>
+                </div>
+            </div>
+        </main>
+
+        <div class="status-bar">
+            <div>MODE: <span id="globalModeDisplay">INTEGRATE</span></div>
+            <div class="step-display">STEP: <span id="stepCounter">0</span></div>
+            <div id="audioStatus" style="color: #ff6b6b;">● STANDBY</div>
+        </div>
+    </div>
+
+    <script>
+        // ===== STATE ===== //
+        const state = {
+            decks: {
+                pairs: { synth: null, chorus: null, reverb: null, filter: null, sequence: null, solo: false, mute: false, currentAxis: 0 },
+                meta: { synth: null, chorus: null, reverb: null, filter: null, sequence: null, solo: false, mute: false, currentAxis: 0 }
+            },
+            global: { mode: 'INTEGRATE', bpm: 90, isPlaying: false, step: 0, evolveRate: 0.35, chaos: 0.18, audioReady: false },
+            axes: { pairs: [], meta: [] }
+        };
+
+        // ===== AUDIO ===== //
+        async function initAudio() {
+            await Tone.start();
+            
+            state.decks.pairs.synth = new Tone.PolySynth(Tone.MetalSynth, {
+                frequency: 200, envelope: { attack: 0.1, decay: 2, release: 3 }, harmonicity: 8, modulationIndex: 10
+            });
+            state.decks.pairs.synth.volume.value = -18;
+
+            state.decks.meta.synth = new Tone.PolySynth(Tone.FMSynth, {
+                harmonicity: 3, modulationIndex: 12, envelope: { attack: 0.5, decay: 1.5, sustain: 0.3, release: 4 }
+            });
+            state.decks.meta.synth.volume.value = -15;
+
+            Object.values(state.decks).forEach(deck => {
+                deck.chorus = new Tone.Chorus(0.5, 3, 0.5).start();
+                deck.reverb = new Tone.Reverb({ decay: 6, wet: 0.4 }).toDestination();
+                deck.filter = new Tone.Filter(2000, 'lowpass', -24);
+                deck.synth.chain(deck.filter, deck.chorus, deck.reverb);
+            });
+
+            state.global.audioReady = true;
+            document.getElementById('audioStatus').textContent = '● LIVE';
+            document.getElementById('audioStatus').style.color = '#00ff88';
+            return true;
+        }
+
+        // ===== DATA ===== //
+        function initializeAxes() {
+            const templates = {
+                pairs: ['Instinct/Reason', 'Seen/Unseen', 'Ideas/Ideology', 'Source/Resource', 'Heart/Head', 'Parts/Whole', 'Chaos/Order', 'Signal/Noise', 'Known/Unknown', 'Create/Destroy', 'Expand/Contract', 'Focus/Diffuse'],
+                meta: ['Identity', 'Experience', 'Language', 'Domain', 'Purpose', 'Order']
+            };
+            Object.keys(templates).forEach(deckId => {
+                state.axes[deckId] = templates[deckId].map((name, i) => ({
+                    name, index: i, value: Math.floor(Math.random() * 9) + 1, target: Math.floor(Math.random() * 9) + 1,
+                    note: ['C', 'D', 'E', 'F', 'G', 'A', 'B'][i % 7] + Math.floor(i / 7 + 2),
+                    octave: 3, detune: 0, history: Array(20).fill().map(() => Math.floor(Math.random() * 9) + 1)
+                }));
+                state.axes[deckId].forEach(a => a.value = a.history[0]);
+            });
+        }
+
+        // ===== VISUALIZATION ===== //
+        function polarToCart(angle, radius) {
+            return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
+        }
+
+        function createSmoothPath(values, maxRadius) {
+            const points = values.map((val, i) => {
+                const angle = (i / values.length) * Math.PI * 2 - Math.PI / 2;
+                return polarToCart(angle, (val / 9) * maxRadius);
+            });
+            let path = `M ${points[0].x},${points[0].y}`;
+            for (let i = 0; i < points.length; i++) {
+                const p0 = points[(i - 1 + points.length) % points.length];
+                const p1 = points[i];
+                const p2 = points[(i + 1) % points.length];
+                const cp1x = p1.x + (p2.x - p0.x) * 0.15;
+                const cp1y = p1.y + (p2.y - p0.y) * 0.15;
+                path += ` Q ${cp1x},${cp1y} ${p2.x},${p2.y}`;
+            }
+            return path + ' Z';
+        }
+
+        function drawRadar(deckId) {
+            const svg = document.getElementById(`${deckId}Svg`);
+            const axes = state.axes[deckId];
+            const maxRadius = 180;
+
+            const defs = svg.querySelector('defs');
+            svg.innerHTML = '';
+            if (defs) svg.appendChild(defs);
+
+            // Grid circles
+            for (let i = 1; i <= 3; i++) {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                Object.entries({ r: (maxRadius / 3) * i, fill: 'none', stroke: 'rgba(255,255,255,0.05)', 'stroke-width': 1 }).forEach(([k, v]) => circle.setAttribute(k, v));
+                svg.appendChild(circle);
+            }
+
+            // Axes
+            axes.forEach((axis, i) => {
+                const angle = (i / axes.length) * Math.PI * 2 - Math.PI / 2;
+                const end = polarToCart(angle, maxRadius);
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                Object.entries({ x1: 0, y1: 0, x2: end.x, y2: end.y, stroke: 'rgba(255,255,255,0.08)', 'stroke-width': 1 }).forEach(([k, v]) => line.setAttribute(k, v));
+                svg.appendChild(line);
+
+                const labelPos = polarToCart(angle, maxRadius + 25);
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                Object.entries({ x: labelPos.x, y: labelPos.y + 4, fill: '#667', 'font-size': 10, 'text-anchor': 'middle' }).forEach(([k, v]) => text.setAttribute(k, v));
+                text.textContent = axis.name.split('/')[0].toUpperCase();
+                svg.appendChild(text);
+            });
+
+            // History traces with distinct colors
+            const layers = [
+                { key: 'T-1', color: '--past-color', opacity: 0.15 },
+                { key: 'T0', color: '--integrate-color', opacity: 0.4 },
+                { key: 'T+1', color: '--future-color', opacity: 0.12 }
+            ];
+            
+            layers.forEach(layer => {
+                if (deckId === 'pairs' && layer.key === 'T-1') {
+                    for (let h = 0; h < 15; h++) {
+                        const age = Math.pow(h / 15, 2);
+                        const opacity = age * 0.1;
+                        const values = axes.map(axis => axis.history[h] || axis.value);
+                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        path.setAttribute('d', createSmoothPath(values, maxRadius));
+                        path.setAttribute('class', 'trace-path');
+                        path.style.stroke = `rgb(from var(${layer.color}) r g b / ${opacity})`;
+                        svg.appendChild(path);
+                    }
+                }
+            });
+
+            // Current state
+            const currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            currentPath.setAttribute('d', createSmoothPath(axes.map(a => a.value), maxRadius));
+            currentPath.setAttribute('class', 'current-path');
+            svg.appendChild(currentPath);
+
+            // Nodes
+            axes.forEach((axis, i) => {
+                const angle = (i / axes.length) * Math.PI * 2 - Math.PI / 2;
+                const pos = polarToCart(angle, (axis.value / 9) * maxRadius);
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('data-deck', deckId);
+                g.setAttribute('data-axis', i);
+                g.setAttribute('transform', `translate(${pos.x}, ${pos.y})`);
+
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                Object.entries({ r: 8, class: 'axis-node' }).forEach(([k, v]) => circle.setAttribute(k, v));
+                g.appendChild(circle);
+
+                const innerDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                Object.entries({ r: 4, fill: '#00d4ff' }).forEach(([k, v]) => innerDot.setAttribute(k, v));
+                g.appendChild(innerDot);
+
+                svg.appendChild(g);
+            });
+        }
+
+        // ===== SEQUENCER ===== //
+        function startSequencer() {
+            if (!state.global.audioReady) return;
+            Tone.Transport.bpm.value = state.global.bpm;
+            
+            state.decks.pairs.sequence = new Tone.Sequence((time, col) => {
+                if (state.decks.pairs.mute) return;
+                const axis = state.axes.pairs[col];
+                const velocity = axis.value / 9;
+                state.decks.pairs.synth.set({ detune: (Math.random() - 0.5) * state.global.chaos * 100 });
+                state.decks.pairs.synth.triggerAttackRelease(axis.note, '16n', time, velocity * 0.6);
+                Tone.Draw.schedule(() => {
+                    document.querySelector(`#pairsSvg g[data-axis="${col}"] .axis-node`)?.classList.add('active');
+                    setTimeout(() => document.querySelector(`#pairsSvg g[data-axis="${col}"] .axis-node`)?.classList.remove('active'), 200);
+                }, time);
+                state.decks.pairs.currentAxis = col;
+            }, [...Array(12).keys()], '16n').start(0);
+
+            state.decks.meta.sequence = new Tone.Sequence((time, col) => {
+                if (state.decks.meta.mute) return;
+                const axis = state.axes.meta[col];
+                const velocity = axis.value / 9;
+                state.decks.meta.synth.set({ harmonicity: state.global.mode === 'INTEGRATE' ? 5 : state.global.mode === 'GROUND' ? 2 : 8 });
+                state.decks.meta.synth.triggerAttackRelease(axis.note, '8n', time, velocity * 0.7);
+                Tone.Draw.schedule(() => {
+                    document.querySelector(`#metaSvg g[data-axis="${col}"] .axis-node`)?.classList.add('active');
+                    setTimeout(() => document.querySelector(`#metaSvg g[data-axis="${col}"] .axis-node`)?.classList.remove('active'), 250);
+                }, time);
+                state.decks.meta.currentAxis = col;
+                state.global.step++;
+                document.getElementById('stepCounter').textContent = state.global.step;
+                if (state.global.step % Math.floor(16 / state.global.evolveRate) === 0) evolveState();
+            }, [...Array(6).keys()], '8n').start(0);
+        }
+
+        // ===== EVOLUTION ===== //
+        function evolveState() {
+            Object.entries(state.axes).forEach(([deckId, axes]) => {
+                axes.forEach(axis => {
+                    axis.history.unshift(axis.value);
+                    if (axis.history.length > 20) axis.history.pop();
+                    const drift = (Math.random() - 0.5) * state.global.chaos * 2;
+                    const pull = (Math.random() * 9 + 1 - axis.value) * 0.1;
+                    axis.value = Math.max(1, Math.min(9, axis.value + pull + drift));
+                    if (Math.random() < 0.05) axis.target = Math.floor(Math.random() * 9) + 1;
+                });
+                drawRadar(deckId);
+            });
+        }
+
+        // ===== AUDIO START ===== //
+        async function startAudioSystem() {
+            const success = await initAudio();
+            if (success) {
+                document.getElementById('audioOverlay').classList.add('hidden');
+                setTimeout(() => document.getElementById('audioOverlay').style.display = 'none', 500);
+            }
+        }
+
+        // ===== CONTROLS ===== //
+        document.getElementById('playBtn').addEventListener('click', () => {
+            if (!state.global.audioReady) {
+                alert('Please click START AUDIO first!');
+                return;
+            }
+            if (!state.global.isPlaying) {
+                Tone.Transport.start();
+                startSequencer();
+                state.global.isPlaying = true;
+                document.getElementById('playBtn').textContent = '⏸ PAUSE';
+                document.querySelectorAll('.playhead-arm').forEach(arm => arm.classList.add('active'));
+            } else {
+                Tone.Transport.stop();
+                Tone.Transport.cancel();
+                state.global.isPlaying = false;
+                document.getElementById('playBtn').textContent = '▶ PLAY';
+                document.querySelectorAll('.playhead-arm').forEach(arm => arm.classList.remove('active'));
+            }
+        });
+
+        document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                state.global.mode = e.target.dataset.mode;
+                document.getElementById('globalModeDisplay').textContent = state.global.mode;
+                if (state.global.audioReady) {
+                    const noise = new Tone.NoiseSynth({ noise: { type: 'pink' } }).toDestination();
+                    noise.triggerAttackRelease('8n');
+                }
+            });
+        });
+
+        document.getElementById('bpmSlider').addEventListener('input', (e) => {
+            state.global.bpm = parseInt(e.target.value);
+            document.getElementById('bpmValue').textContent = state.global.bpm;
+            Tone.Transport.bpm.value = state.global.bpm;
+        });
+
+        document.getElementById('evolveSlider').addEventListener('input', (e) => {
+            state.global.evolveRate = parseInt(e.target.value) / 100;
+            document.getElementById('evolveValue').textContent = e.target.value;
+        });
+
+        document.getElementById('chaosSlider').addEventListener('input', (e) => {
+            state.global.chaos = parseInt(e.target.value) / 100;
+            document.getElementById('chaosValue').textContent = e.target.value;
+        });
+
+        document.querySelectorAll('.deck-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const deckId = e.target.closest('.deck').id.replace('Deck', '');
+                const action = e.target.dataset.action;
+                if (action === 'solo') {
+                    state.decks[deckId].solo = !state.decks[deckId].solo;
+                    e.target.style.color = state.decks[deckId].solo ? '#00d4ff' : '#667';
+                } else if (action === 'mute') {
+                    state.decks[deckId].mute = !state.decks[deckId].mute;
+                    e.target.style.color = state.decks[deckId].mute ? '#ff6b6b' : '#667';
+                } else if (action === 'nudge') {
+                    evolveState();
+                }
+            });
+        });
+
+        // ===== DRAGGING (FIXED) ===== //
+        let draggedElement = null;
+        let dragStartAngle = 0;
+        let dragStartValue = 0;
+
+        function getSVGCoords(e, svg) {
+            const pt = svg.createSVGPoint();
+            pt.x = e.clientX;
+            pt.y = e.clientY;
+            return pt.matrixTransform(svg.getScreenCTM().inverse());
+        }
+
+        document.querySelectorAll('svg').forEach(svg => {
+            svg.addEventListener('mousedown', (e) => {
+                const g = e.target.closest('g[data-axis]');
+                if (!g) return;
+                draggedElement = g;
+                const deckId = g.dataset.deck;
+                const axisIndex = parseInt(g.dataset.axis);
+                const pt = getSVGCoords(e, svg);
+                dragStartAngle = Math.atan2(pt.y, pt.x) * 180 / Math.PI + 90;
+                dragStartValue = state.axes[deckId][axisIndex].value;
+                e.preventDefault();
+            });
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!draggedElement) return;
+            const deckId = draggedElement.dataset.deck;
+            const axisIndex = parseInt(draggedElement.dataset.axis);
+            const svg = document.getElementById(`${deckId}Svg`);
+            const pt = getSVGCoords(e, svg);
+            const currentAngle = Math.atan2(pt.y, pt.x) * 180 / Math.PI + 90;
+            
+            let angleDiff = currentAngle - dragStartAngle;
+            if (angleDiff > 180) angleDiff -= 360;
+            if (angleDiff < -180) angleDiff += 360;
+            
+            const valueChange = Math.round(angleDiff / 45);
+            const newValue = Math.max(1, Math.min(9, dragStartValue + valueChange));
+            state.axes[deckId][axisIndex].value = newValue;
+            
+            const angle = (axisIndex / state.axes[deckId].length) * Math.PI * 2 - Math.PI / 2;
+            const maxRadius = 180;
+            const radius = (newValue / 9) * maxRadius;
+            const pos = polarToCart(angle, radius);
+            draggedElement.setAttribute('transform', `translate(${pos.x}, ${pos.y})`);
+            
+            if (state.global.audioReady) {
+                const axis = state.axes[deckId][axisIndex];
+                state.decks[deckId].synth.triggerAttackRelease(axis.note, '32n', undefined, 0.3);
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (draggedElement) draggedElement = null;
+        });
+
+        // ===== INITIALIZATION ===== //
+        window.addEventListener('load', () => {
+            initializeAxes();
+            drawRadar('pairs');
+            drawRadar('meta');
+        });
+    </script>
+</body>
+</html>
