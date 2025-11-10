@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Temporal Fingerprint Sequencer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a1a;
+            --bg-inner: #1a0a0e;
+            --bg-outer: #0a0e1a;
+            --panel-border: #262626;
+            --text-primary: #e0e0ff;
+            --text-secondary: #bbbbbb;
+            --accent-inner: #ff5c7c;
+            --accent-outer: #569fff;
+            --accent-observer: #7dd3fc;
+            --accent-shed: #ff5c7c;
+            --accent-integrate: #569fff;
+            --accent-ground: #56ff9f;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+            background: radial-gradient(ellipse at center, var(--bg-primary) 0%, #000 100%);
+            color: var(--text-primary);
+            overflow: hidden;
+            touch-action: none;
+            height: 100vh;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr;
+            gap: 0;
+            height: 100vh;
+        }
+
+        .panel {
+            padding: 15px;
+            overflow-y: auto;
+            border-right: 2px solid var(--panel-border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel:last-child {
+            border-right: none;
+        }
+
+        .panel.inner {
+            background: linear-gradient(180deg, var(--bg-inner) 0%, var(--bg-primary) 100%);
+        }
+
+        .panel.observer {
+            background: var(--bg-primary);
+            padding: 10px;
+        }
+
+        .panel.outer {
+            background: linear-gradient(180deg, var(--bg-outer) 0%, var(--bg-primary) 100%);
+        }
+
+        .panel-header {
+            text-align: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--panel-border);
+        }
+
+        .panel-title {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
+
+        .panel.inner .panel-title {
+            color: var(--accent-inner);
+        }
+
+        .panel.observer .panel-title {
+            color: var(--accent-observer);
+            font-size: 24px;
+        }
+
+        .panel.outer .panel-title {
+            color: var(--accent-outer);
+        }
+
+        .panel-subtitle {
+            font-size: 10px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .audio-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .audio-btn {
+            padding: 8px 12px;
+            border: 2px solid var(--accent-observer);
+            background: transparent;
+            color: var(--accent-observer);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .audio-btn.active {
+            background: rgba(125, 211, 252, 0.2);
+            box-shadow: 0 0 12px rgba(125, 211, 252, 0.4);
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+        }
+
+        input[type="range"] {
+            width: 70px;
+            height: 4px;
+            background: rgba(125, 211, 252, 0.2);
+            border-radius: 2px;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: var(--accent-observer);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(125, 211, 252, 0.6);
+        }
+
+        .temporal-controls {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .temporal-btn {
+            padding: 8px 10px;
+            border: 1px solid var(--panel-border);
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: bold;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .temporal-btn.active {
+            border-color: var(--accent-observer);
+            color: var(--accent-observer);
+            background: rgba(125, 211, 252, 0.1);
+        }
+
+        .operator-bar {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .operator-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 12px;
+            border: 1px solid var(--panel-border);
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 80px;
+        }
+
+        .operator-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .operator-btn.shed:hover {
+            border-color: var(--accent-shed);
+            color: var(--accent-shed);
+        }
+
+        .operator-btn.integrate:hover {
+            border-color: var(--accent-integrate);
+            color: var(--accent-integrate);
+        }
+
+        .operator-btn.ground:hover {
+            border-color: var(--accent-ground);
+            color: var(--accent-ground);
+        }
+
+        .operator-icon {
+            font-size: 20px;
+        }
+
+        .grid-container {
+            background: rgba(22, 22, 22, 0.5);
+            border: 2px solid var(--panel-border);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            flex: 1;
+            position: relative;
+        }
+
+        .hexagon-overlay {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hexagon-canvas {
+            display: block;
+            opacity: 0.7;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(9, 28px);
+            grid-template-rows: repeat(9, 28px);
+            gap: 2px;
+            justify-content: center;
+            position: relative;
+            z-index: 5;
+        }
+
+        .cell {
+            width: 28px;
+            height: 28px;
+            background: rgba(26, 26, 26, 0.7);
+            border: 1px solid #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .cell:hover {
+            background: rgba(42, 42, 42, 0.9);
+            border-color: var(--accent-observer);
+            z-index: 20;
+        }
+
+        .cell.known.inner {
+            background: linear-gradient(135deg, rgba(255, 92, 124, 0.9) 0%, rgba(255, 92, 124, 0.6) 100%);
+            border: 2px solid #fff;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 0 10px rgba(255, 92, 124, 0.4);
+        }
+
+        .cell.known.outer {
+            background: linear-gradient(135deg, rgba(86, 159, 255, 0.9) 0%, rgba(86, 159, 255, 0.6) 100%);
+            border: 2px solid #fff;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 0 10px rgba(86, 159, 255, 0.4);
+        }
+
+        .cell.synthetic {
+            background: rgba(38, 38, 38, 0.6);
+            color: #888;
+            border: 1px solid #333;
+        }
+
+        .cell.empty {
+            background: rgba(18, 18, 18, 0.3);
+            color: #444;
+        }
+
+        .cell.selected {
+            border: 2px solid #fff;
+            transform: scale(1.15);
+            z-index: 15;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(125, 211, 252, 0.7); }
+            50% { box-shadow: 0 0 0 8px rgba(125, 211, 252, 0); }
+        }
+
+        .radar-container {
+            background: #161616;
+            border: 2px solid var(--panel-border);
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .radar-title {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .radar-canvas {
+            width: 100%;
+            max-width: 160px;
+            height: 160px;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .node-details {
+            background: #161616;
+            border: 2px solid var(--panel-border);
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 10px;
+        }
+
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--panel-border);
+        }
+
+        .node-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .node-coord {
+            background: #0b0b0b;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--accent-observer);
+        }
+
+        .phase-section {
+            margin-bottom: 8px;
+        }
+
+        .phase-title {
+            font-size: 9px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .phase-icon {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+        }
+
+        .phase-text {
+            color: var(--text-secondary);
+            font-size: 9px;
+            line-height: 1.4;
+            padding-left: 16px;
+        }
+
+        .fingerprint-display {
+            background: #0b0b0b;
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 9px;
+            color: #888;
+            text-align: center;
+        }
+
+        .temporal-data {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            margin-top: 8px;
+        }
+
+        .temporal-item {
+            background: #0b0b0b;
+            padding: 6px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .temporal-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--accent-observer);
+        }
+
+        .temporal-label {
+            font-size: 8px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: repeat(9, 24px);
+                grid-template-rows: repeat(9, 24px);
+            }
+            .cell {
+                width: 24px;
+                height: 24px;
+                font-size: 7px;
+            }
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <div class="container">
+        <!-- INNER PANEL -->
+        <div class="panel inner">
+            <div class="panel-header">
+                <div class="panel-title">🔴 INNER</div>
+                <div class="panel-subtitle">Instinct · Seen · Ideas · Source · Heart · Whole</div>
+            </div>
+            
+            <div class="audio-controls">
+                <button class="audio-btn" id="innerPlayBtn">▶ PLAY</button>
+                <div class="slider-group">
+                    <span>BPM</span>
+                    <input type="range" id="innerBpmSlider" min="40" max="180" value="90">
+                    <span id="innerBpmValue">90</span>
+                </div>
+            </div>
+
+            <div class="operator-bar">
+                <button class="operator-btn shed" onclick="applyOperator('shed', 'inner')">
+                    <span class="operator-icon">✂️</span>
+                    <span>Shed</span>
+                </button>
+                <button class="operator-btn integrate" onclick="applyOperator('integrate', 'inner')">
+                    <span class="operator-icon">🔗</span>
+                    <span>Integrate</span>
+                </button>
+                <button class="operator-btn ground" onclick="applyOperator('ground', 'inner')">
+                    <span class="operator-icon">⚓</span>
+                    <span>Ground</span>
+                </button>
+            </div>
+
+            <div class="grid-container">
+                <div class="hexagon-overlay">
+                    <canvas class="hexagon-canvas" width="250" height="250" id="innerHex"></canvas>
+                </div>
+                <div class="grid" id="innerGrid"></div>
+            </div>
+
+            <div class="radar-container">
+                <div class="radar-title">12-Axis Pairs Pattern</div>
+                <canvas class="radar-canvas" id="innerRadar"></canvas>
+            </div>
+
+            <div class="node-details" id="innerNodeDetails">
+                <div style="color: var(--text-secondary); text-align: center;">Select a node to view details</div>
+            </div>
+        </div>
+
+        <!-- OBSERVER PANEL -->
+        <div class="panel observer">
+            <div class="panel-header">
+                <div class="panel-title">👁️ TIME WORM</div>
+                <div class="panel-subtitle">Temporal Fingerprint Grid</div>
+            </div>
+            
+            <div class="temporal-controls">
+                <button class="temporal-btn active" onclick="setTemporalLayer('t-1')">T-1 SHED</button>
+                <button class="temporal-btn" onclick="setTemporalLayer('t0')">T0 CURRENT</button>
+                <button class="temporal-btn" onclick="setTemporalLayer('t1')">T+1 GROUND</button>
+            </div>
+
+            <div class="grid-container">
+                <div class="hexagon-overlay">
+                    <canvas class="hexagon-canvas" width="300" height="300" id="observerHex"></canvas>
+                </div>
+                <div class="grid" id="observerGrid"></div>
+            </div>
+
+            <div class="fingerprint-display" id="fingerprintInfo">
+                Select a node to view its temporal fingerprint
+            </div>
+        </div>
+
+        <!-- OUTER PANEL -->
+        <div class="panel outer">
+            <div class="panel-header">
+                <div class="panel-title">🔵 OUTER</div>
+                <div class="panel-subtitle">Reason · Unseen · Ideology · Resource · Head · Parts</div>
+            </div>
+            
+            <div class="audio-controls">
+                <button class="audio-btn" id="outerPlayBtn">▶ PLAY</button>
+                <div class="slider-group">
+                    <span>BPM</span>
+                    <input type="range" id="outerBpmSlider" min="40" max="180" value="75">
+                    <span id="outerBpmValue">75</span>
+                </div>
+            </div>
+
+            <div class="operator-bar">
+                <button class="operator-btn shed" onclick="applyOperator('shed', 'outer')">
+                    <span class="operator-icon">✂️</span>
+                    <span>Shed</span>
+                </button>
+                <button class="operator-btn integrate" onclick="applyOperator('integrate', 'outer')">
+                    <span class="operator-icon">🔗</span>
+                    <span>Integrate</span>
+                </button>
+                <button class="operator-btn ground" onclick="applyOperator('ground', 'outer')">
+                    <span class="operator-icon">⚓</span>
+                    <span>Ground</span>
+                </button>
+            </div>
+
+            <div class="radar-container">
+                <div class="radar-title">6-Axis Meta Pattern</div>
+                <canvas class="radar-canvas" id="outerRadar"></canvas>
+            </div>
+
+            <div class="node-details" id="outerNodeDetails">
+                <div style="color: var(--text-secondary); text-align: center;">Select a node to view details</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dataset (simplified version with full structure)
+        const dataset = {
+            known_nodes: [
+                {id: 1, coordinate: [1, 5], name: "Identity Inner", subtitle: "Instinct", axis: "Identity", polarity: "Inner", shedding: "Recognize compromise...", integrating: "Address precarious...", grounding: "Honor your impulses..."},
+                {id: 2, coordinate: [1, 7], name: "Experience Inner", subtitle: "Seen", axis: "Experience", polarity: "Inner", shedding: "Recognize intensity...", integrating: "Address mistrusting...", grounding: "Center your value..."},
+                {id: 3, coordinate: [3, 9], name: "Language Inner", subtitle: "Ideas", axis: "Language", polarity: "Inner", shedding: "Recognize philosophy...", integrating: "Address unapproachable...", grounding: "Let others inform you..."},
+                {id: 4, coordinate: [5, 9], name: "Domain Inner", subtitle: "Source", axis: "Domain", polarity: "Inner", shedding: "Recognize material...", integrating: "Address melancholic...", grounding: "Tend to your feelings..."},
+                {id: 5, coordinate: [7, 9], name: "Purpose Inner", subtitle: "Heart", axis: "Purpose", polarity: "Inner", shedding: "Recognize logic...", integrating: "Address detached...", grounding: "Lead with your heart..."},
+                {id: 6, coordinate: [9, 7], name: "Order Inner", subtitle: "Parts", axis: "Order", polarity: "Inner", shedding: "Recognize sensitivity...", integrating: "Address self-undoing...", grounding: "Create healthy structure..."},
+                {id: 7, coordinate: [9, 5], name: "Identity Outer", subtitle: "Reason", axis: "Identity", polarity: "Outer", shedding: "Recognize individuating...", integrating: "Address impulsive...", grounding: "Share, hold space..."},
+                {id: 8, coordinate: [9, 3], name: "Experience Outer", subtitle: "Unseen", axis: "Experience", polarity: "Outer", shedding: "Recognize sensuality...", integrating: "Address controlling...", grounding: "Go deep and transmute..."},
+                {id: 9, coordinate: [7, 1], name: "Language Outer", subtitle: "Ideology", axis: "Language", polarity: "Outer", shedding: "Recognize intellectual...", integrating: "Address duplicitous...", grounding: "Unplug from external..."},
+                {id: 10, coordinate: [5, 1], name: "Domain Outer", subtitle: "Resource", axis: "Domain", polarity: "Outer", shedding: "Recognize tenderness...", integrating: "Address needy...", grounding: "Shoulder important endeavors..."},
+                {id: 11, coordinate: [3, 1], name: "Purpose Outer", subtitle: "Head", axis: "Purpose", polarity: "Outer", shedding: "Recognize leadership...", integrating: "Address bossy...", grounding: "Advocate for social cause..."},
+                {id: 12, coordinate: [1, 3], name: "Order Outer", subtitle: "Whole", axis: "Order", polarity: "Outer", shedding: "Recognize precision...", integrating: "Address critical...", grounding: "Go with the flow..."}
+            ],
+            synthetic_nodes: [
+                {coordinate: [1, 1], name: "Primal Chaos", shedding: "Release attachment...", integrating: "Address fear...", grounding: "Dance at the edge..."},
+                {coordinate: [1, 2], name: "Silent Depths", shedding: "Release hiding...", integrating: "Address fear...", grounding: "Emerge from depths..."},
+                {coordinate: [5, 5], name: "The Center", shedding: "Release everything...", integrating: "Integrate all...", grounding: "Be the center..."}
+            ]
+        };
+
+        // State management
+        let currentTemporalLayer = 't0';
+        let selectedNode = null;
+        let innerAxisValues = [0.3, 0.3, 0.3, 0.3, 0.3, 0.3];
+        let outerAxisValues = [0.3, 0.3, 0.3, 0.3, 0.3, 0.3];
+        const axes = ['IDENTITY', 'EXPERIENCE', 'LANGUAGE', 'DOMAIN', 'PURPOSE', 'ORDER'];
+
+        // Audio components
+        let innerSynth, outerSynth, reverb, delay, filter;
+        let innerSequence, outerSequence;
+        let audioReady = false;
+        let innerPlaying = false;
+        let outerPlaying = false;
+
+        // Initialize audio
+        async function initAudio() {
+            try {
+                await Tone.start();
+                
+                filter = new Tone.Filter({
+                    frequency: 2000,
+                    type: 'lowpass',
+                    rolloff: -24
+                }).toDestination();
+
+                delay = new Tone.FeedbackDelay({
+                    delayTime: '8n',
+                    feedback: 0.4,
+                    wet: 0.3
+                }).connect(filter)
+
+                reverb = new Tone.Reverb({
+                    decay: 8,
+                    wet: 0.6
+                }).connect(delay)
+
+                // Inner radar synth - more organic, sine waves
+                innerSynth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'sine' },
+                    envelope: { attack: 0.3, decay: 1.2, sustain: 0.3, release: 2.5 }
+                }).connect(reverb)
+                innerSynth.volume.value = -20
+
+                // Outer radar synth - more digital, triangle waves
+                outerSynth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'triangle' },
+                    envelope: { attack: 0.1, decay: 0.8, sustain: 0.2, release: 1.5 },
+                    filter: { frequency: 800, type: 'bandpass' }
+                }).connect(reverb)
+                outerSynth.volume.value = -22
+
+                audioReady = true
+                return true
+            } catch (e) {
+                console.error('Audio init failed:', e)
+                return false
+            }
+        }
+
+        // Initialize grids and UI
+        document.addEventListener('DOMContentLoaded', () => {
+            renderGrids()
+            updateAllRadars()
+            drawHexagonOverlay('innerHex', innerAxisValues, null, '#ff5c7c')
+            drawHexagonOverlay('observerHex', innerAxisValues, outerAxisValues)
+            drawHexagonOverlay('outerHex', null, outerAxisValues, '#569fff')
+        })
+
+        // Grid rendering
+        function renderGrids() {
+            ['innerGrid', 'observerGrid', 'outerGrid'].forEach(gridId => {
+                const grid = document.getElementById(gridId)
+                grid.innerHTML = ''
+                
+                for (let row = 1; row <= 9; row++) {
+                    for (let col = 1; col <= 9; col++) {
+                        const cell = document.createElement('div')
+                        cell.className = 'cell'
+                        cell.dataset.coord = `${row},${col}`
+                        
+                        const knownNode = dataset.known_nodes.find(n => 
+                            n.coordinate[0] === row && n.coordinate[1] === col
+                        )
+                        
+                        const syntheticNode = dataset.synthetic_nodes.find(n => 
+                            n.coordinate[0] === row && n.coordinate[1] === col
+                        )
+                        
+                        if (knownNode) {
+                            cell.classList.add('known', knownNode.polarity.toLowerCase())
+                            cell.textContent = knownNode.id
+                            cell.title = knownNode.name
+                            cell.onclick = () => selectNode(knownNode, 'known')
+                        } else if (syntheticNode) {
+                            cell.classList.add('synthetic')
+                            cell.textContent = '◦'
+                            cell.title = syntheticNode.name
+                            cell.onclick = () => selectNode(syntheticNode, 'synthetic')
+                        } else {
+                            cell.classList.add('empty')
+                            cell.textContent = '·'
+                        }
+                        
+                        grid.appendChild(cell)
+                    }
+                }
+            })
+        }
+
+        // Node selection
+        function selectNode(node, type) {
+            selectedNode = node
+            
+            // Update selection visual
+            document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'))
+            document.querySelectorAll(`.cell[data-coord="${node.coordinate[0]},${node.coordinate[1]}"]`).forEach(cell => {
+                cell.classList.add('selected')
+            })
+            
+            // Update axis values
+            const axisIndex = axes.indexOf(node.axis?.toUpperCase())
+            if (axisIndex >= 0) {
+                if (node.polarity === 'Inner' || type === 'synthetic') {
+                    innerAxisValues = innerAxisValues.map((v, i) => i === axisIndex ? 0.9 : 0.3)
+                    outerAxisValues = outerAxisValues.map(() => 0.3)
+                } else {
+                    outerAxisValues = outerAxisValues.map((v, i) => i === axisIndex ? 0.9 : 0.3)
+                    innerAxisValues = innerAxisValues.map(() => 0.3)
+                }
+            }
+            
+            updateAllRadars()
+            updateNodeDetails()
+            updateFingerprintInfo()
+            
+            // Redraw hexagons
+            drawHexagonOverlay('innerHex', innerAxisValues, null, '#ff5c7c')
+            drawHexagonOverlay('observerHex', innerAxisValues, outerAxisValues)
+            drawHexagonOverlay('outerHex', null, outerAxisValues, '#569fff')
+        }
+
+        // Temporal layer control
+        function setTemporalLayer(layer) {
+            currentTemporalLayer = layer
+            
+            document.querySelectorAll('.temporal-btn').forEach(btn => btn.classList.remove('active'))
+            event.target.classList.add('active')
+            
+            updateGridForTemporalLayer(layer)
+            if (selectedNode) updateFingerprintInfo()
+        }
+
+        function updateGridForTemporalLayer(layer) {
+            document.querySelectorAll('.cell').forEach(cell => {
+                const coord = cell.dataset.coord.split(',').map(Number)
+                const knownNode = dataset.known_nodes.find(n => 
+                    n.coordinate[0] === coord[0] && n.coordinate[1] === coord[1]
+                )
+                
+                if (knownNode) {
+                    const phase = layer === 't-1' ? 'shedding' : layer === 't0' ? 'integrating' : 'grounding'
+                    const relevance = calculateRelevance(knownNode, phase)
+                    cell.style.opacity = relevance > 0.5 ? '1' : '0.4'
+                } else if (cell.classList.contains('synthetic')) {
+                    cell.style.opacity = layer === 't0' ? '0.8' : '0.3'
+                } else {
+                    cell.style.opacity = '0.2'
+                }
+            })
+        }
+
+        // S→I→G Operators
+        function applyOperator(operator, polarity) {
+            if (!selectedNode) {
+                alert('Select a node first')
+                return
+            }
+            
+            const btn = event.target.closest('.operator-btn')
+            btn.style.transform = 'scale(0.9)'
+            setTimeout(() => btn.style.transform = '', 200)
+            
+            const axisIndex = axes.indexOf(selectedNode.axis?.toUpperCase())
+            if (axisIndex >= 0) {
+                if (polarity === 'inner') {
+                    innerAxisValues[axisIndex] = Math.max(0.2, Math.min(1, innerAxisValues[axisIndex] + (operator === 'shed' ? -0.2 : operator === 'integrate' ? 0.1 : 0.15)))
+                    if (innerPlaying) triggerInnerNote(axisIndex)
+                } else {
+                    outerAxisValues[axisIndex] = Math.max(0.2, Math.min(1, outerAxisValues[axisIndex] + (operator === 'shed' ? -0.2 : operator === 'integrate' ? 0.1 : 0.15)))
+                    if (outerPlaying) triggerOuterNote(axisIndex)
+                }
+            }
+            
+            updateAllRadars()
+            drawHexagonOverlay('innerHex', innerAxisValues, null, '#ff5c7c')
+            drawHexagonOverlay('observerHex', innerAxisValues, outerAxisValues)
+            drawHexagonOverlay('outerHex', null, outerAxisValues, '#569fff')
+        }
+
+        // Audio playback controls
+        document.getElementById('innerPlayBtn').addEventListener('click', async () => {
+            if (!audioReady) await initAudio()
+            toggleInnerPlayback()
+        })
+
+        document.getElementById('outerPlayBtn').addEventListener('click', async () => {
+            if (!audioReady) await initAudio()
+            toggleOuterPlayback()
+        })
+
+        async function toggleInnerPlayback() {
+            if (!innerPlaying) {
+                innerPlaying = true
+                document.getElementById('innerPlayBtn').textContent = '⏸ PAUSE'
+                document.getElementById('innerPlayBtn').classList.add('active')
+                startInnerSequence()
+            } else {
+                innerPlaying = false
+                document.getElementById('innerPlayBtn').textContent = '▶ PLAY'
+                document.getElementById('innerPlayBtn').classList.remove('active')
+                if (innerSequence) innerSequence.stop()
+            }
+        }
+
+        async function toggleOuterPlayback() {
+            if (!outerPlaying) {
+                outerPlaying = true
+                document.getElementById('outerPlayBtn').textContent = '⏸ PAUSE'
+                document.getElementById('outerPlayBtn').classList.add('active')
+                startOuterSequence()
+            } else {
+                outerPlaying = false
+                document.getElementById('outerPlayBtn').textContent = '▶ PLAY'
+                document.getElementById('outerPlayBtn').classList.remove('active')
+                if (outerSequence) outerSequence.stop()
+            }
+        }
+
+        function startInnerSequence() {
+            const bpm = parseInt(document.getElementById('innerBpmSlider').value)
+            Tone.Transport.bpm.value = bpm
+            
+            innerSequence = new Tone.Sequence((time, index) => {
+                const velocity = innerAxisValues[index]
+                innerSynth.triggerAttackRelease(['C3', 'D3', 'E3', 'F3', 'G3', 'A3'][index], '8n', time, velocity * 0.8)
+            }, [0, 1, 2, 3, 4, 5], '8n')
+            
+            innerSequence.start(0)
+        }
+
+        function startOuterSequence() {
+            const bpm = parseInt(document.getElementById('outerBpmSlider').value)
+            Tone.Transport.bpm.value = bpm
+            
+            outerSequence = new Tone.Sequence((time, index) => {
+                const velocity = outerAxisValues[index]
+                outerSynth.triggerAttackRelease(['C4', 'E4', 'G4', 'C5', 'E5', 'G5'][index], '4n', time, velocity * 0.7)
+            }, [0, 1, 2, 3, 4, 5], '4n')
+            
+            outerSequence.start(0)
+        }
+
+        function triggerInnerNote(axisIndex) {
+            if (!audioReady || !innerSynth) return
+            const velocity = innerAxisValues[axisIndex]
+            const notes = ['C3', 'D3', 'E3', 'F3', 'G3', 'A3']
+            innerSynth.triggerAttackRelease(notes[axisIndex], '8n', undefined, velocity * 0.9)
+        }
+
+        function triggerOuterNote(axisIndex) {
+            if (!audioReady || !outerSynth) return
+            const velocity = outerAxisValues[axisIndex]
+            const notes = ['C4', 'E4', 'G4', 'C5', 'E5', 'G5']
+            outerSynth.triggerAttackRelease(notes[axisIndex], '4n', undefined, velocity * 0.8)
+        }
+
+        // Slider listeners
+        document.getElementById('innerBpmSlider').addEventListener('input', (e) => {
+            document.getElementById('innerBpmValue').textContent = e.target.value
+            if (innerPlaying) Tone.Transport.bpm.value = parseInt(e.target.value)
+        })
+
+        document.getElementById('outerBpmSlider').addEventListener('input', (e) => {
+            document.getElementById('outerBpmValue').textContent = e.target.value
+            if (outerPlaying) Tone.Transport.bpm.value = parseInt(e.target.value)
+        })
+
+        // Hexagon drawing
+        function drawHexagonOverlay(canvasId, innerValues, outerValues, singleColor = null) {
+            const canvas = document.getElementById(canvasId)
+            const ctx = canvas.getContext('2d')
+            const centerX = canvas.width / 2
+            const centerY = canvas.height / 2
+            const radius = Math.min(centerX, centerY) - 20
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
+            
+            // Draw axes
+            ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)'
+            ctx.lineWidth = 1
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2 - Math.PI / 2
+                ctx.beginPath()
+                ctx.moveTo(centerX, centerY)
+                ctx.lineTo(centerX + Math.cos(angle) * radius, centerY + Math.sin(angle) * radius)
+                ctx.stroke()
+            }
+            
+            // Draw outer polygon
+            if (outerValues) {
+                ctx.beginPath()
+                ctx.strokeStyle = '#569fff'
+                ctx.lineWidth = 2
+                for (let i = 0; i <= 6; i++) {
+                    const angle = (i / 6) * Math.PI * 2 - Math.PI / 2
+                    const value = outerValues[i % 6]
+                    const x = centerX + Math.cos(angle) * radius * value
+                    const y = centerY + Math.sin(angle) * radius * value
+                    if (i === 0) ctx.moveTo(x, y)
+                    else ctx.lineTo(x, y)
+                }
+                ctx.closePath()
+                ctx.globalAlpha = 0.2
+                ctx.fillStyle = '#569fff'
+                ctx.fill()
+                ctx.globalAlpha = 1
+                ctx.stroke()
+            }
+            
+            // Draw inner polygon
+            if (innerValues) {
+                ctx.beginPath()
+                ctx.strokeStyle = singleColor || '#ff5c7c'
+                ctx.lineWidth = 2
+                for (let i = 0; i <= 6; i++) {
+                    const angle = (i / 6) * Math.PI * 2 - Math.PI / 2
+                    const value = innerValues[i % 6]
+                    const x = centerX + Math.cos(angle) * radius * value
+                    const y = centerY + Math.sin(angle) * radius * value
+                    if (i === 0) ctx.moveTo(x, y)
+                    else ctx.lineTo(x, y)
+                }
+                ctx.closePath()
+                ctx.globalAlpha = 0.2
+                ctx.fillStyle = singleColor || '#ff5c7c'
+                ctx.fill()
+                ctx.globalAlpha = 1
+                ctx.stroke()
+            }
+            
+            // Draw labels
+            ctx.fillStyle = '#888'
+            ctx.font = 'bold 9px Courier New'
+            ctx.textAlign = 'center'
+            axes.forEach((axis, i) => {
+                const angle = (i / 6) * Math.PI * 2 - Math.PI / 2
+                const x = centerX + Math.cos(angle) * (radius + 12)
+                const y = centerY + Math.sin(angle) * (radius + 12)
+                ctx.fillText(axis.substring(0, 3), x, y + 3)
+            })
+        }
+
+        // Radar drawing
+        function updateAllRadars() {
+            drawRadar('innerRadar', innerAxisValues, '#ff5c7c')
+            drawRadar('outerRadar', outerAxisValues, '#569fff')
+        }
+
+        function drawRadar(canvasId, values, color) {
+            const canvas = document.getElementById(canvasId)
+            const ctx = canvas.getContext('2d')
+            const centerX = 80
+            const centerY = 80
+            const radius = 60
+            
+            ctx.clearRect(0, 0, 160, 160)
+            
+            // Grid circles
+            ctx.strokeStyle = '#2a2a2a'
+            ctx.lineWidth = 1
+            for (let i = 0.33; i <= 1; i += 0.33) {
+                ctx.beginPath()
+                ctx.arc(centerX, centerY, radius * i, 0, Math.PI * 2)
+                ctx.stroke()
+            }
+            
+            // Axes
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2 - Math.PI / 2
+                ctx.beginPath()
+                ctx.moveTo(centerX, centerY)
+                ctx.lineTo(centerX + Math.cos(angle) * radius, centerY + Math.sin(angle) * radius)
+                ctx.stroke()
+            }
+            
+            // Data polygon
+            ctx.beginPath()
+            ctx.strokeStyle = color
+            ctx.lineWidth = 2
+            for (let i = 0; i <= 6; i++) {
+                const angle = (i / 6) * Math.PI * 2 - Math.PI / 2
+                const value = values[i % 6]
+                const x = centerX + Math.cos(angle) * radius * value
+                const y = centerY + Math.sin(angle) * radius * value
+                if (i === 0) ctx.moveTo(x, y)
+                else ctx.lineTo(x, y)
+            }
+            ctx.closePath()
+            
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+            gradient.addColorStop(0, color.replace('rgb', 'rgba').replace(')', ', 0.4)'))
+            gradient.addColorStop(1, color.replace('rgb', 'rgba').replace(')', ', 0.05)'))
+            ctx.fillStyle = gradient
+            ctx.fill()
+            ctx.stroke()
+            
+            // Labels
+            ctx.fillStyle = '#888'
+            ctx.font = 'bold 8px monospace'
+            ctx.textAlign = 'center'
+            axes.forEach((axis, i) => {
+                const angle = (i / 6) * Math.PI * 2 - Math.PI / 2
+                const x = centerX + Math.cos(angle) * (radius + 10)
+                const y = centerY + Math.sin(angle) * (radius + 10)
+                ctx.fillText(axis.substring(0, 3), x, y + 3)
+            })
+        }
+
+        // UI updates
+        function updateNodeDetails() {
+            if (!selectedNode) return
+            
+            const isKnown = selectedNode.id !== undefined
+            const detailsHtml = `
+                <div class="node-header">
+                    <div>
+                        <div class="node-title">${selectedNode.name}</div>
+                        ${isKnown ? `<div class="node-subtitle">${selectedNode.subtitle}</div>` : `<div class="node-subtitle" style="color: #666;">Synthetic Node</div>`}
+                    </div>
+                    <div class="node-coord">(${selectedNode.coordinate[0]}, ${selectedNode.coordinate[1]})</div>
+                </div>
+                
+                <div class="temporal-data">
+                    <div class="temporal-item">
+                        <div class="temporal-value">${calculateTemporalScore(selectedNode, 'shedding')}</div>
+                        <div class="temporal-label">T-1 Shed</div>
+                    </div>
+                    <div class="temporal-item">
+                        <div class="temporal-value">${calculateTemporalScore(selectedNode, 'integrating')}</div>
+                        <div class="temporal-label">T0 Integrate</div>
+                    </div>
+                    <div class="temporal-item">
+                        <div class="temporal-value">${calculateTemporalScore(selectedNode, 'grounding')}</div>
+                        <div class="temporal-label">T+1 Ground</div>
+                    </div>
+                </div>
+                
+                <div class="phase-section">
+                    <div class="phase-title shed">
+                        <span class="phase-icon shed">🔴</span>
+                        SHED
+                    </div>
+                    <div class="phase-text">${selectedNode.shedding}</div>
+                </div>
+                
+                <div class="phase-section">
+                    <div class="phase-title integrate">
+                        <span class="phase-icon integrate">⚪</span>
+                        INTEGRATE
+                    </div>
+                    <div class="phase-text">${selectedNode.integrating}</div>
+                </div>
+                
+                <div class="phase-section">
+                    <div class="phase-title ground">
+                        <span class="phase-icon ground">🟢</span>
+                        GROUND
+                    </div>
+                    <div class="phase-text">${selectedNode.grounding}</div>
+                </div>
+            `
+            
+            document.getElementById('innerNodeDetails').innerHTML = detailsHtml
+            document.getElementById('outerNodeDetails').innerHTML = detailsHtml
+        }
+
+        function updateFingerprintInfo() {
+            if (!selectedNode) return
+            
+            const layer = currentTemporalLayer === 't-1' ? 'shedding' : currentTemporalLayer === 't0' ? 'integrating' : 'grounding'
+            const content = selectedNode[layer] || ''
+            const score = calculateTemporalScore(selectedNode, layer)
+            
+            document.getElementById('fingerprintInfo').innerHTML = `
+                <div style="font-weight: bold; margin-bottom: 6px;">
+                    ${selectedNode.name} - ${currentTemporalLayer.toUpperCase()}
+                </div>
+                <div style="color: ${currentTemporalLayer === 't-1' ? '#ff5c7c' : currentTemporalLayer === 't0' ? '#569fff' : '#56ff9f'}; margin-bottom: 6px;">
+                    Relevance: ${score}/9
+                </div>
+                <div style="font-size: 8px; line-height: 1.3;">
+                    ${content.substring(0, 100)}${content.length > 100 ? '...' : ''}
+                </div>
+            `
+        }
+
+        function calculateRelevance(node, phase) {
+            const content = node[phase] || ''
+            return Math.min(1, 0.3 + (content.length / 200))
+        }
+
+        function calculateTemporalScore(node, phase) {
+            const content = node[phase] || ''
+            const baseScore = Math.min(9, 3 + Math.floor(content.length / 50))
+            const posBonus = (node.coordinate[0] + node.coordinate[1]) / 10
+            return Math.min(9, Math.floor(baseScore + posBonus))
+        }
+    </script>
+</body>
+</html>
