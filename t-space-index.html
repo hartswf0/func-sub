@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Holographic Protocol Index — Training Grounds Edition (Sonified, Safe)</title>
+<style>
+  :root{
+    /* Core palette (celestial + blackened) */
+    --bg:#0a0b0d; --ink:#e8e8ea; --sub:#a1a7af; --accent:#00ffff;
+    --panel:#0e1218ee; --glass:#0c0f15aa; --surface:#0f151b; --border:#1e2630; --grid-on:#27313b;
+    --earth:#8fb0ff; --moon:#d2c0a5; --sun:#ff7b1a; --venus:#8fb0ff; --mars:#d2c0a5;
+    --ok:#0fd; --warn:#ffb300; --err:#ff6363;
+    --dockH:48px; --chipMaxW:80vw; --chipPad:10px;
+    --ring-s:#3b2d30;   /* Shedding sector */
+    --ring-i:#1f2c30;   /* Integrating sector */
+    --ring-g:#2a2e1f;   /* Grounding sector */
+    --bm-accent:#f2f2f2; /* Blackened accent */
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%; margin:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased; overflow:hidden
+  }
+
+  /* Header */
+  header{
+    position:fixed; top:0; left:0; right:0; height:64px;
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:0 12px; backdrop-filter:saturate(1.1) blur(8px);
+    background:var(--glass); border-bottom:1px solid var(--border); z-index:100
+  }
+  .brand{display:flex; flex-direction:column; gap:2px; min-width:0}
+  .brand .tag{font-size:11px;color:var(--sub);letter-spacing:.22em;white-space:nowrap}
+  .brand h1{font-size:13px;letter-spacing:.16em;margin:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .btn{height:36px;min-width:36px;padding:0 12px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--ink);display:inline-flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;touch-action:manipulation}
+  .btn:active{transform:scale(.98)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#062b2e}
+
+  /* Status strip */
+  #statusBar{position:fixed;top:64px;left:0;right:0;height:28px;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--glass);border-bottom:1px solid var(--border);z-index:95}
+  .light{width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok)}
+  .light.warn{background:var(--warn);box-shadow:0 0 10px var(--warn)}
+  .light.err{background:var(--err);box-shadow:0 0 10px var(--err)}
+  .status-text{font-size:12px;color:var(--sub)}
+  .status-actions{margin-left:auto;display:flex;gap:6px;align-items:center}
+  .switch{display:flex;align-items:center;gap:6px}
+  .switch input{appearance:none;width:36px;height:22px;border-radius:999px;position:relative;background:#1a212a;border:1px solid var(--border)}
+  .switch input:after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#98a2ad;transition:left .18s}
+  .switch input:checked{background:#0e2a2a;border-color:#0e2a2a}
+  .switch input:checked:after{left:16px}
+
+  /* URL Dock */
+  #urlDock{position:fixed;top:calc(64px + 28px);left:0;right:0;height:var(--dockH);background:var(--glass);border-bottom:1px solid var(--border);display:flex;align-items:center;z-index:90;padding:0 8px}
+  #dockInner{width:100%;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:thin;-webkit-overflow-scrolling:touch;mask-image:linear-gradient(to right,#000a 96%,transparent)}
+  .dock-link{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;margin:0 4px;border:1px solid var(--border);background:var(--surface);border-radius:10px;font-size:12px}
+  .dock-link code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+  .dock-label{opacity:.85}
+
+  /* View area */
+  #views{position:fixed;top:calc(64px + 28px + var(--dockH));left:0;right:0;bottom:0}
+  #mapView,#listView,#textFallback{position:absolute;inset:0}
+  #mapView{display:block}
+  #listView{display:none;overflow:auto;padding:16px}
+  #textFallback{display:none;overflow:auto;padding:16px}
+
+  /* Cards */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;cursor:pointer;transition:all .2s}
+  .card:hover{border-color:var(--accent);box-shadow:0 0 12px rgba(0,255,255,.15)}
+  .card-title{font-size:13px;font-weight:700;letter-spacing:.12em;margin-bottom:6px;text-transform:uppercase;color:var(--ink)}
+  .card-url{font-size:11px;color:var(--sub);letter-spacing:.03em;font-family:ui-monospace,Menlo,Consolas,monospace;margin-bottom:8px}
+  .card-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .tag-chip{font-size:10px;padding:3px 8px;border-radius:8px;background:var(--panel);color:var(--sub);border:1px solid var(--border);text-transform:uppercase;letter-spacing:.1em}
+  .card-context{font-size:12px;color:#cbd2d9}
+
+  /* Canvas & overlay */
+  #canvasWrap{position:relative;width:100%;height:100%}
+  canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+  #overlay{position:absolute;inset:0;pointer-events:none;z-index:5}
+  #leaders{position:absolute;inset:0;pointer-events:none}
+  #chips{position:absolute;inset:0;pointer-events:none}
+
+  /* On-grid chips with better labels (anchor-aware) */
+  .chip{
+    position:absolute; pointer-events:auto; text-decoration:none; color:var(--ink);
+    background:rgba(15,21,27,.95); border:1px solid var(--accent); border-radius:12px;
+    padding:var(--chipPad); max-width:var(--chipMaxW);
+    filter:drop-shadow(0 4px 10px rgba(0,0,0,.35));
+  }
+  .chip .row1{display:flex;align-items:center;gap:8px}
+  .chip .lbl{font-size:12px;background:#022a2a;border:1px solid #09cfd1;padding:2px 6px;border-radius:8px}
+  .chip .title{font-size:12px;font-weight:700;letter-spacing:.04em}
+  .chip .phase{font-size:10px;color:#89a; letter-spacing:.08em; text-transform:uppercase}
+  .chip .url{font:11px ui-monospace,Menlo,Consolas,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.9}
+  .chip .ctx{font-size:11px;color:#cbd2d9;opacity:.95}
+  .chip.small .url{display:none}
+  .chip.small .ctx{display:none}
+  .chip:focus-visible{outline:2px solid var(--accent)}
+
+  /* Anchor transforms */
+  .anchor-ne{transform:translate(12px,-12px)}
+  .anchor-nw{transform:translate(-12px,-12px)}
+  .anchor-se{transform:translate(12px,12px)}
+  .anchor-sw{transform:translate(-12px,12px)}
+
+  /* Controls */
+  .panel{
+    position:fixed; bottom:8px; left:8px; right:8px;
+    background:var(--panel); border:1px solid var(--border); border-radius:16px;
+    padding:10px 12px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; z-index:80;
+    padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))
+  }
+  .panel label{font-size:12px;color:var(--sub)}
+  .panel .row{display:flex;gap:8px;align-items:center;flex:1 1 220px;min-width:190px}
+  select,button,input[type=range],input[type=checkbox]{appearance:none;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--ink);padding:10px 12px;font-size:13px}
+  input[type=range]{width:140px}
+
+  /* Error banner */
+  #errorBanner{position:fixed;left:8px;right:8px;top:calc(64px + 28px + var(--dockH) + 8px);background:#2a0e10;border:1px solid var(--err);color:#ffd6d6;border-radius:12px;padding:10px 12px;z-index:120;display:none}
+  #errorBanner .title{font-weight:700;margin-bottom:4px}
+  #errorBanner .actions{display:flex;gap:8px;margin-top:8px}
+  #errorBanner .actions .btn{border-color:#ff8c8c}
+
+  /* Dialog */
+  dialog{max-width:min(720px,92vw);background:#0d1116;border:1px solid var(--border);border-radius:16px;color:var(--ink);padding:18px 16px}
+  dialog::backdrop{background:#0008}
+  .info h2{letter-spacing:.18em;font-size:12px;margin:12px 0 8px;color:var(--sub)}
+  .info p{font-size:13px;line-height:1.5;color:#c9d0d7;margin:0 0 6px}
+  .info .muted{color:#9aa3ad}
+  .linklist{max-height:40vh;overflow:auto;border:1px dashed var(--border);border-radius:10px;padding:8px}
+  .linklist a{display:block;font-size:12px;margin:6px 0;color:var(--accent);word-break:break-all}
+
+  /* Blackened aesthetic toggle */
+  .blackened body, .blackened{background:#070707}
+  .blackened .chip{border-color:#444}
+  .blackened .dock-link{border-color:#313131}
+  .blackened .btn.primary{background:var(--bm-accent);border-color:#fff;color:#000}
+  .blackened .status-text{color:#c8c8c8}
+</style>
+<base target="_blank" rel="noopener noreferrer">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="tag">FUNCTION REGISTRY · TRAINING GROUNDS EDITION</div>
+      <h1>Holographic Protocol Index — Celestial/Blackened Sonified Canvas</h1>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" id="openInfo" aria-label="About & Credits">About</button>
+      <button class="btn" id="toggleView" aria-label="Toggle list/map">List View</button>
+      <button class="btn primary" id="seed" aria-label="New seed">New Seed</button>
+    </div>
+  </header>
+
+  <div id="statusBar">
+    <div id="statusLight" class="light" aria-hidden="true"></div>
+    <div id="statusText" class="status-text">OK — interactive</div>
+    <div class="status-actions">
+      <label class="switch" title="Safe Mode (lower load)">
+        <input id="safeMode" type="checkbox"><span class="status-text">Safe</span>
+      </label>
+      <label class="switch" title="Blackened Mode (aesthetic + audio tone)">
+        <input id="blackened" type="checkbox"><span class="status-text">Blackened</span>
+      </label>
+      <button class="btn" id="forceError" title="Trigger an error to test recovery">Test Fail</button>
+      <button class="btn" id="recover" title="Restart renderer" disabled>Recover</button>
+    </div>
+  </div>
+
+  <nav id="urlDock" role="navigation" aria-label="Protocol URLs">
+    <div id="dockInner"></div>
+  </nav>
+
+  <section id="errorBanner" role="alert">
+    <div class="title">Renderer halted</div>
+    <div id="errorMsg">An unexpected error occurred. You can switch to List View or press Recover.</div>
+    <div class="actions">
+      <button class="btn" id="gotoList">Open List View</button>
+      <button class="btn" id="bannerRecover">Recover</button>
+    </div>
+  </section>
+
+  <div id="views">
+    <div id="mapView">
+      <div id="canvasWrap">
+        <canvas id="sky" aria-label="interactive function map"></canvas>
+        <div id="overlay" aria-hidden="false">
+          <svg id="leaders" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+          <div id="chips"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="listView" aria-label="Text navigation"></div>
+
+    <div id="textFallback" aria-label="Minimal fallback">
+      <h3 style="margin:0 0 10px 0;letter-spacing:.12em;color:var(--sub);font-size:12px">TEXT FALLBACK</h3>
+      <div id="fallbackLinks"></div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="panel" role="region" aria-label="controls">
+    <div class="row">
+      <label for="mode">Grid</label>
+      <select id="mode">
+        <option value="orientation">Orientation</option>
+        <option value="manual">Training Manual</option>
+      </select>
+    </div>
+    <div class="row">
+      <label for="anim">Animate</label>
+      <input id="anim" type="range" min="0" max="1" step="1" value="1"/>
+      <label class="muted" id="speedLbl">on</label>
+    </div>
+    <div class="row">
+      <label for="noise">Drift</label>
+      <input id="noise" type="range" min="0" max="100" value="18" />
+    </div>
+
+    <!-- URL chip visibility -->
+    <div class="row">
+      <label for="chipMode">URL chips</label>
+      <select id="chipMode" title="On-grid URL visibility">
+        <option value="full">Full</option>
+        <option value="label">Compact</option>
+        <option value="off">Hidden</option>
+      </select>
+    </div>
+
+    <!-- Sonification -->
+    <div class="row">
+      <button id="enableSound">Enable Sound</button>
+      <label for="vol">Vol</label><input id="vol" type="range" min="0" max="1" step="0.01" value="0.20" />
+      <label for="dist">Dist</label><input id="dist" type="range" min="0" max="1" step="0.01" value="0.25" />
+      <label for="delay">Delay</label><input id="delay" type="range" min="0" max="0.8" step="0.01" value="0.12" />
+      <button id="blast">Blast</button>
+    </div>
+
+    <div class="row">
+      <button id="snap">Export PNG</button>
+      <button id="reset">Reset</button>
+    </div>
+  </div>
+
+  <!-- About / Credits -->
+  <dialog id="info" aria-label="About dialog">
+    <article class="info">
+      <h2>ABOUT</h2>
+      <p>
+        An interactive, <em>sonified</em> media canvas translating a self-alignment cycle —
+        <strong>Shedding → Integrating → Grounding</strong> — into a minimalist celestial chart.
+        Visual logic: orbital mapping, nodal axes, sector rings. Sonic logic: tremolo + distortion
+        textures, delay tails, and per-node tones.
+      </p>
+      <h2>CONTEXT & CREDIT</h2>
+      <p>
+        Inspired by <strong>Jordan Caldwell’s Training Grounds</strong> (self-alignment framework).
+        Aesthetic and attitude are informed by the transformative ethos of <strong>Black Metal</strong> —
+        intensity, catharsis, clarity-through-noise — rendered here as stark contrasts and raw timbres.
+      </p>
+      <p class="muted">
+        Single-file artifact. Mobile-first. Designed to fail gracefully (Safe Mode, recovery, text fallback).
+      </p>
+
+      <h2>FULL URL LIST</h2>
+      <div class="linklist" id="infoLinks" role="list"></div>
+
+      <form method="dialog" style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn">Close</button>
+      </form>
+    </article>
+  </dialog>
+
+  <!-- No-JS fallback -->
+  <noscript>
+    <style>#views>*{display:none!important} #textFallback{display:block!important}</style>
+    <div style="padding:16px">
+      <h3>JS Disabled — Links</h3>
+      <ul>
+        <li><a href="https://hartswf0.github.io/func-sub/t0.html">T0 — https://hartswf0.github.io/func-sub/t0.html</a></li>
+        <li><a href="https://hartswf0.github.io/func-sub/t1.html">T1 — https://hartswf0.github.io/func-sub/t1.html</a></li>
+        <li><a href="https://hartswf0.github.io/func-sub/t2.html">T2 — https://hartswf0.github.io/func-sub/t2.html</a></li>
+        <li><a href="https://hartswf0.github.io/func-sub/t3.html">T3 — https://hartswf0.github.io/func-sub/t3.html</a></li>
+        <li><a href="https://hartswf0.github.io/func-sub/t4.html">T4 — https://hartswf0.github.io/func-sub/t4.html</a></li>
+        <li><a href="https://hartswf0.github.io/func-sub/t5-sonic.html">T5 — https://hartswf0.github.io/func-sub/t5-sonic.html</a></li>
+        <li><a href="https://hartswf0.github.io/func-sub/t6-sonic.html">T6 — https://hartswf0.github.io/func-sub/t6-sonic.html</a></li>
+      </ul>
+    </div>
+  </noscript>
+
+<script>
+(() => {
+  // ---------------- DATA (with phases + context) ----------------
+  const DATA = [
+    { id:'sun',   label:'T0', title:'Base System',            url:'https://hartswf0.github.io/func-sub/t0.html',        x:0,    y:-120, r:82, color:'var(--sun)',   phase:'Grounding',  context:'Center holds; calibrate baseline', tags:['initialize','core'] },
+    { id:'earth', label:'T1', title:'Primary Functions',      url:'https://hartswf0.github.io/func-sub/t1.html',        x:-60,  y:80,   r:22, color:'var(--earth)', phase:'Integrating', context:'Operational mesh; execute',         tags:['primary','execute'] },
+    { id:'moon',  label:'T2', title:'Secondary Functions',    url:'https://hartswf0.github.io/func-sub/t2.html',        dist:36,        r:9,  color:'var(--moon)',  phase:'Shedding',    context:'Peripheral intent; refine',        tags:['extended','process'] },
+    { id:'venus', label:'T5', title:'Sonic Protocol',         url:'https://hartswf0.github.io/func-sub/t5-sonic.html',  x:-126, y:-40, r:16, color:'var(--venus)', phase:'Integrating', context:'Spectral alignment; tones',         tags:['sonic','frequency'] },
+    { id:'mars',  label:'T6', title:'Sonic Protocol v6',      url:'https://hartswf0.github.io/func-sub/t6-sonic.html',  x:142,  y:60,  r:15, color:'var(--mars)',  phase:'Shedding',    context:'Harmonic stress-test',              tags:['sonic','waveform'] },
+    { id:'node1', label:'T3', title:'Tertiary Functions',     url:'https://hartswf0.github.io/func-sub/t3.html',        x:-60,  y:182, r:12, color:'var(--accent)',phase:'Grounding',  context:'Edge constraints; specialize',     tags:['specialized','tertiary'] },
+    { id:'node2', label:'T4', title:'Quaternary Functions',   url:'https://hartswf0.github.io/func-sub/t4.html',        x:182,  y:202, r:12, color:'var(--accent)',phase:'Integrating', context:'Matrix extension; lattice',        tags:['advanced','matrix'] },
+  ];
+
+  // ---------------- DOM ----------------
+  const canvas     = document.getElementById('sky');
+  const ctx        = canvas.getContext('2d');
+  const statusLight= document.getElementById('statusLight');
+  const statusText = document.getElementById('statusText');
+  const safeModeEl = document.getElementById('safeMode');
+  const blackenedEl= document.getElementById('blackened');
+  const forceError = document.getElementById('forceError');
+  const recoverBtn = document.getElementById('recover');
+  const banner     = document.getElementById('errorBanner');
+  const bannerMsg  = document.getElementById('errorMsg');
+  const gotoList   = document.getElementById('gotoList');
+  const bannerRec  = document.getElementById('bannerRecover');
+  const dockInner  = document.getElementById('dockInner');
+  const chipsWrap  = document.getElementById('chips');
+  const leaders    = document.getElementById('leaders');
+  const infoDlg    = document.getElementById('info');
+  const infoBtn    = document.getElementById('openInfo');
+  const toggleView = document.getElementById('toggleView');
+  const listView   = document.getElementById('listView');
+  const mapView    = document.getElementById('mapView');
+  const textFallback = document.getElementById('textFallback');
+  const fallbackLinks= document.getElementById('fallbackLinks');
+
+  const modeSel   = document.getElementById('mode');
+  const animRange = document.getElementById('anim');
+  const speedLbl  = document.getElementById('speedLbl');
+  const drift     = document.getElementById('noise');
+  const snap      = document.getElementById('snap');
+  const reset     = document.getElementById('reset');
+  const seedBtn   = document.getElementById('seed');
+  const chipModeSel = document.getElementById('chipMode');
+
+  // Audio controls
+  const enableSoundBtn = document.getElementById('enableSound');
+  const vol = document.getElementById('vol');
+  const distAmt = document.getElementById('dist');
+  const delayAmt= document.getElementById('delay');
+  const blastBtn= document.getElementById('blast');
+
+  // ---------------- STATE ----------------
+  const S = { w:0, h:0 };
+  let RAF = null, t = 0, seed = Math.random()*10000|0;
+  let DPR = clampDPR();
+  const pointers = new Map(); let lastPinchDist = 0;
+  let lastView = 'map'; let errorState = null;
+
+  const state = {
+    mode: 'orientation',
+    pan: {x:0,y:0},
+    zoom: 1,
+    animate: true,
+    noise: 18,
+    chipMode: 'full', // full | label | off
+    bodies: {},       // clone of DATA entries
+    dragging: null,
+    clickedBody: null
+  };
+  DATA.forEach(d => state.bodies[d.id] = {...d});
+
+  // Audio graph (lazy)
+  let audio = {
+    ctx:null, master:null, gain:null, shaper:null, delay:null, feedback:null,
+    nodes:{} // id -> {osc, gain}
+  };
+
+  // ---------------- UTIL ----------------
+  function getCSS(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function getVarOr(v){ return String(v||'').startsWith('var(') ? getCSS(v.slice(4,-1)) : v; }
+  function mulberry(a){ return function(){ let t = a += 0x6D2B79F5; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; } }
+  function spaced(s,track){ return s.split('').join(' '.repeat(Math.max(0, Math.floor(track*10)))); }
+  function clampDPR(){ return (safeModeEl?.checked) ? 1 : Math.max(1, Math.min(window.devicePixelRatio || 1, 2)); }
+
+  function worldFromScreen(sx, sy){
+    const rect = canvas.getBoundingClientRect();
+    const lx = (sx - rect.left), ly = (sy - rect.top);
+    const px = lx * DPR, py = ly * DPR;
+    return { x: (px - S.w/2) / state.zoom - state.pan.x,
+             y: (py - S.h/2) / state.zoom - state.pan.y };
+  }
+  function screenFromWorld(wx, wy){
+    return { x: ((wx + state.pan.x) * state.zoom + S.w/2) / DPR,
+             y: ((wy + state.pan.y) * state.zoom + S.h/2) / DPR };
+  }
+
+  function resize(){
+    try{
+      DPR = clampDPR();
+      const r = canvas.getBoundingClientRect();
+      const dockH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--dockH')) || 48;
+      const topOffset = 64 + 28 + dockH;
+      S.w = Math.floor(r.width * DPR);
+      S.h = Math.floor((window.innerHeight - topOffset) * DPR);
+      canvas.width = S.w; canvas.height = S.h;
+      syncSVGSize();
+      updateChips(); drawLeaders();
+    }catch(e){ fail(e); }
+  }
+  function syncSVGSize(){ if(!leaders) return; leaders.setAttribute('viewBox', `0 0 ${S.w/DPR} ${S.h/DPR}`); }
+  function vibrate(pattern){ if('vibrate' in navigator) try{ navigator.vibrate(pattern); }catch{} }
+
+  // ---------------- DRAW PRIMS ----------------
+  function line(x1,y1,x2,y2,opt={}){
+    ctx.save(); ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
+    if(opt.dash) ctx.setLineDash(opt.dash);
+    ctx.strokeStyle = getVarOr(opt.stroke) || getCSS('--sub');
+    ctx.globalAlpha = opt.alpha ?? 1; ctx.lineWidth = opt.width ?? 1; ctx.stroke(); ctx.restore();
+  }
+  function circle(x,y,r,opt={}){
+    ctx.save(); if(opt.alpha != null) ctx.globalAlpha = opt.alpha; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+    if(opt.fill){ ctx.fillStyle = getVarOr(opt.fill); ctx.fill(); }
+    if(opt.stroke || opt.stroke === undefined){ ctx.strokeStyle = getVarOr(opt.stroke) || getCSS('--sub'); if(opt.dash) ctx.setLineDash(opt.dash); ctx.stroke(); }
+    ctx.restore();
+  }
+  function blob(x,y,r,css){
+    const col = getVarOr(css);
+    const g = ctx.createRadialGradient(x-0.3*r,y-0.3*r,r*0.2,x,y,r);
+    g.addColorStop(0,getCSS('--accent')); g.addColorStop(1,col);
+    ctx.save(); ctx.globalAlpha = 0.95; ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); ctx.restore();
+    circle(x,y,r*0.18,{fill:getCSS('--accent'),stroke:getCSS('--accent'),alpha:0.9});
+  }
+  function text(str,x,y,size=12,track=0.15){
+    ctx.save(); ctx.fillStyle = getCSS('--ink'); ctx.globalAlpha = 0.9;
+    ctx.font = `${size}px ui-monospace, Menlo, Consolas, monospace`;
+    const lines = (str+"").split('\n');
+    for(let i=0;i<lines.length;i++){ const s = spaced(lines[i], track); ctx.fillText(s, x, y + i*size*1.4); }
+    ctx.restore();
+  }
+  function label(str,x,y){ text(str,x,y,14,0.22); }
+
+  // Sector ring (Training Grounds: S → I → G)
+  function sectorRing(){
+    const r1 = 240, r2 = 360;
+    const sectors = [
+      {name:'Shedding',    start:-Math.PI*2/3, end:-Math.PI*1/3, color:getCSS('--ring-s')},
+      {name:'Integrating', start:-Math.PI*1/3, end: Math.PI*0/3, color:getCSS('--ring-i')},
+      {name:'Grounding',   start: Math.PI*0/3, end: Math.PI*2/3, color:getCSS('--ring-g')}
+    ];
+    ctx.save(); ctx.globalAlpha = 0.28;
+    for(const s of sectors){ annulusSector(0,0,r1,r2,s.start,s.end,s.color); }
+    ctx.restore();
+    text('Shedding → Integrating → Grounding', -190, -r2-20, 11, 0.14);
+  }
+  function annulusSector(cx,cy,rIn,rOut,a0,a1,fill){
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx,cy,rOut,a0,a1,false);
+    ctx.arc(cx,cy,rIn,a1,a0,true);
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function rectGrid(){
+    ctx.save();
+    const sz = 80;
+    ctx.strokeStyle = getCSS('--grid-on'); ctx.globalAlpha = 0.65; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(let x=-2000; x<=2000; x+=sz){ ctx.moveTo(x,-2000); ctx.lineTo(x,2000);} 
+    for(let y=-2000; y<=2000; y+=sz){ ctx.moveTo(-2000,y); ctx.lineTo(2000,y);} 
+    ctx.stroke();
+    ctx.globalAlpha = 0.25; ctx.beginPath();
+    for(let x=-2000; x<=2000; x+=sz/5){ ctx.moveTo(x,-2000); ctx.lineTo(x,2000);} 
+    for(let y=-2000; y<=2000; y+=sz/5){ ctx.moveTo(-2000,y); ctx.lineTo(2000,y);} 
+    ctx.stroke(); ctx.restore();
+    label('ORIENTATION', -360, -260);
+  }
+  function polarGrid(){
+    ctx.save();
+    ctx.strokeStyle = getCSS('--grid-on'); ctx.globalAlpha = 0.65; ctx.lineWidth = 1;
+    const rMax = 640;
+    for(let r=60; r<=rMax; r+=60){ circle(0,0,r,{stroke:getCSS('--grid-on'), alpha:0.5}); }
+    ctx.globalAlpha = 0.32;
+    for(let a=0; a<Math.PI*2; a+=Math.PI/12){ line(0,0, Math.cos(a)*rMax, Math.sin(a)*rMax, {stroke:getCSS('--grid-on'), alpha:0.5}); }
+    ctx.restore();
+    sectorRing();
+    label('TRAINING MANUAL', -360, -260);
+  }
+
+  function starfield(ctx,S,seed){
+    const r = mulberry(seed);
+    ctx.save(); ctx.fillStyle = '#07090c'; ctx.fillRect(0,0,S.w,S.h);
+    const N = safeModeEl.checked ? 250 : 600;
+    for(let i=0;i<N;i++){
+      const x = r()*S.w, y = r()*S.h, a = r();
+      ctx.fillStyle = `rgba(255,255,255,${0.15 + a*0.85})`;
+      ctx.fillRect(x,y,1,1); if(a>0.92){ ctx.fillRect(x+1,y,1,1); }
+    }
+    ctx.restore();
+  }
+
+  // ---------------- RENDER LOOP ----------------
+  function frame(){
+    try{
+      if(state.animate && !safeModeEl.checked) t += 0.016;
+      draw();
+      updateChips(); drawLeaders();
+      updateAudio(); // sync tones
+      RAF = requestAnimationFrame(frame);
+      setStatusOK();
+    }catch(e){ fail(e); }
+  }
+
+  function draw(){
+    ctx.save(); ctx.clearRect(0,0,S.w,S.h);
+    starfield(ctx,S,seed);
+    ctx.translate(S.w/2, S.h/2);
+    ctx.scale(state.zoom, state.zoom);
+    ctx.translate(state.pan.x, state.pan.y);
+
+    if(state.mode==='orientation') rectGrid(); else polarGrid();
+
+    const n1 = state.bodies.node1, n2 = state.bodies.node2;
+    if(n1 && n2){
+      line(n1.x, n1.y, n2.x, n2.y, {stroke:getCSS('--ink'), alpha:0.25, width:1});
+      text('TRUE NODAL AXIS', (n1.x+n2.x)/2 - 40, (n1.y+n2.y)/2 - 10, 11, 0.18);
+    }
+
+    for(const [id, body] of Object.entries(state.bodies)){
+      if(id==='moon'){
+        const earth = state.bodies.earth;
+        if(earth){ const ang = t * 0.7; body.x = earth.x + Math.cos(ang) * body.dist; body.y = earth.y + Math.sin(ang) * body.dist; }
+        circle(body.x, body.y, body.r, {fill:body.color||'var(--moon)'});
+      }else if(id==='node1' || id==='node2'){
+        ctx.save(); ctx.fillStyle = getCSS('--accent'); ctx.globalAlpha = 0.95; ctx.strokeStyle = getCSS('--accent'); ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.rect(body.x-8, body.y-8, 16, 16); ctx.fill(); ctx.stroke(); ctx.restore();
+      }else if(id==='sun'){
+        blob(body.x, body.y, body.r, body.color||'var(--sun)');
+      }else if(id==='earth'){
+        circle(body.x, body.y, body.r + 14, {stroke:getCSS('--sub'), dash:[6,6], alpha:0.45});
+        circle(body.x, body.y, body.r, {fill:body.color||'var(--earth)'});
+      }else{
+        circle(body.x, body.y, body.r, {fill:body.color||'var(--moon)', stroke:getCSS('--accent'), alpha:0.9});
+      }
+      if(body.label){ text(body.label, body.x - 12, body.y + body.r + 14, 10, 0.1); }
+    }
+    ctx.restore();
+  }
+
+  // ---------------- CHIP LABELS (anchor-aware) ----------------
+  function createChips(){
+    chipsWrap.innerHTML = '';
+    for(const b of Object.values(state.bodies)){
+      if(!b.url) continue;
+      const a = document.createElement('a');
+      a.className = 'chip'; a.href = b.url; a.target='_blank'; a.rel='noopener noreferrer';
+      a.dataset.id = b.id; a.setAttribute('aria-label', `[${b.label}] ${b.title} — ${b.phase} — ${b.url}`);
+      a.innerHTML = `
+        <div class="row1">
+          <span class="lbl">${b.label}</span>
+          <span class="title">${b.title}</span>
+          <span class="phase">${b.phase}</span>
+        </div>
+        <div class="ctx">${b.context}</div>
+        <div class="url">${b.url}</div>
+      `;
+      chipsWrap.appendChild(a); b._chipEl = a;
+    }
+  }
+
+  function anchorForBody(b){
+    // Choose quadrant-based anchor for clearer placement
+    const qx = (b.x >= 0) ? 1 : -1;
+    const qy = (b.y >= 0) ? 1 : -1;
+    if(qx>0 && qy<0) return 'ne';
+    if(qx<0 && qy<0) return 'nw';
+    if(qx>0 && qy>0) return 'se';
+    return 'sw';
+  }
+
+  function updateChips(){
+    const show = state.chipMode!=='off';
+    chipsWrap.style.display = show ? '' : 'none';
+    if(!show) return;
+
+    for(const b of Object.values(state.bodies)){
+      const el = b._chipEl; if(!el) continue;
+      el.classList.toggle('small', state.chipMode!=='full');
+
+      // Screen position
+      const scr = screenFromWorld(b.x ?? 0, b.y ?? 0);
+      b._screen = scr;
+
+      // Anchor & place
+      const anch = anchorForBody(b);
+      el.classList.remove('anchor-ne','anchor-nw','anchor-se','anchor-sw');
+      el.classList.add('anchor-'+anch);
+
+      // Base position (pin the corner of chip near body)
+      // We position at body screen coords, then translate via anchor class
+      el.style.left = scr.x + 'px';
+      el.style.top  = scr.y + 'px';
+    }
+
+    // Light overlap deconflict (vertical)
+    const chips = Object.values(state.bodies).map(b => b._chipEl).filter(Boolean).map(el=>{
+      const r = el.getBoundingClientRect(), cw = canvas.getBoundingClientRect();
+      return {el, x:(r.left-cw.left)+r.width/2, y:(r.top-cw.top)-6 };
+    }).sort((a,b)=>a.y-b.y);
+    const minGap = 30;
+    for(let i=1;i<chips.length;i++){
+      const prev = chips[i-1], cur = chips[i];
+      if(Math.abs(cur.y - prev.y) < minGap && Math.abs(cur.x - prev.x) < 160){
+        const dy = (minGap - (cur.y - prev.y));
+        cur.y += dy; cur.el.style.top = (parseFloat(cur.el.style.top)||0) + dy + 'px';
+      }
+    }
+  }
+
+  function drawLeaders(){
+    leaders.replaceChildren();
+    if(state.chipMode==='off') return;
+    const ns = 'http://www.w3.org/2000/svg';
+    for(const b of Object.values(state.bodies)){
+      if(!b.url || !b._screen || !b._chipEl) continue;
+      const chipRect = b._chipEl.getBoundingClientRect();
+      const wrapRect = canvas.getBoundingClientRect();
+      let cx, cy;
+
+      // Connect to the closest corner based on anchor
+      const anch = anchorForBody(b);
+      if(anch==='ne'){ cx = chipRect.left - wrapRect.left;              cy = chipRect.top - wrapRect.top + chipRect.height; }
+      if(anch==='nw'){ cx = chipRect.right - wrapRect.left;             cy = chipRect.top - wrapRect.top + chipRect.height; }
+      if(anch==='se'){ cx = chipRect.left - wrapRect.left;              cy = chipRect.top - wrapRect.top; }
+      if(anch==='sw'){ cx = chipRect.right - wrapRect.left;             cy = chipRect.top - wrapRect.top; }
+
+      const line = document.createElementNS(ns,'line');
+      line.setAttribute('x1', b._screen.x);
+      line.setAttribute('y1', b._screen.y);
+      line.setAttribute('x2', cx);
+      line.setAttribute('y2', cy);
+      line.setAttribute('stroke', blackenedEl.checked ? getCSS('--bm-accent') : getCSS('--accent'));
+      line.setAttribute('stroke-opacity','0.75');
+      line.setAttribute('stroke-width','1.5');
+      leaders.appendChild(line);
+    }
+  }
+
+  // ---------------- URL DOCK / LIST / INFO ----------------
+  function renderDock(){
+    dockInner.innerHTML = '';
+    for(const b of DATA){
+      const a = document.createElement('a');
+      a.href = b.url; a.className='dock-link';
+      a.innerHTML = `<span class="dock-label">[${b.label}] ${b.title} — ${b.phase}</span><code>${b.url}</code>`;
+      dockInner.appendChild(a);
+    }
+  }
+  function renderList(){
+    listView.innerHTML = '';
+    for(const b of DATA){
+      const card = document.createElement('div'); card.className='card'; card.dataset.url = b.url;
+      card.innerHTML = `
+        <div class="card-title">[${b.label}] ${b.title}</div>
+        <div class="card-url">${b.url}</div>
+        <div class="card-meta">
+          <span class="tag-chip">${b.phase}</span>
+          ${b.tags.map(t=>`<span class="tag-chip">${t}</span>`).join('')}
+        </div>
+        <div class="card-context">${b.context}</div>
+      `;
+      card.addEventListener('click', ()=>window.open(b.url,'_blank'));
+      listView.appendChild(card);
+    }
+  }
+  function renderInfoLinks(){
+    const list = document.getElementById('infoLinks');
+    list.innerHTML = '';
+    for(const b of DATA){
+      const link = document.createElement('a'); link.href = b.url; link.textContent = `[${b.label}] ${b.title} — ${b.phase} — ${b.url}`;
+      list.appendChild(link);
+    }
+  }
+  function renderTextFallback(){
+    fallbackLinks.innerHTML = DATA.map(b=>`<div><a href="${b.url}">[${b.label}] ${b.title} — ${b.phase} — ${b.url}</a></div>`).join('');
+  }
+
+  // ---------------- INPUT ----------------
+  canvas.addEventListener('pointerdown', (e) => {
+    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY, startX:e.clientX, startY:e.clientY, dist:0});
+    const w = worldFromScreen(e.clientX, e.clientY);
+    const hit = findBodyAt(w.x, w.y, 18);
+    if(hit){
+      state.clickedBody = hit;
+      state.dragging = {type:'body', id:hit.id, target:hit, ox:w.x - hit.x, oy:w.y - hit.y};
+      pulseNode(hit.id);
+    }else{
+      state.dragging = {type:'pan', startPanX:state.pan.x, startPanY:state.pan.y, startX:e.clientX, startY:e.clientY};
+    }
+    canvas.setPointerCapture?.(e.pointerId);
+    canvas.style.cursor='grabbing';
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if(!pointers.has(e.pointerId)) return;
+    const p = pointers.get(e.pointerId);
+    const dx = e.clientX - p.x, dy = e.clientY - p.y;
+    p.dist += Math.hypot(dx,dy); p.x = e.clientX; p.y = e.clientY; pointers.set(e.pointerId,p);
+
+    if(pointers.size===2 && !safeModeEl.checked){
+      const [p1,p2] = Array.from(pointers.values());
+      const dist = Math.hypot(p2.x-p1.x, p2.y-p1.y);
+      if(lastPinchDist){ const cx=(p1.x+p2.x)/2, cy=(p1.y+p2.y)/2; zoomAt(dist/lastPinchDist, cx, cy); }
+      lastPinchDist = dist;
+    }else if(state.dragging){
+      if(state.dragging.type==='body'){
+        const w = worldFromScreen(e.clientX, e.clientY);
+        state.dragging.target.x = w.x - state.dragging.ox;
+        state.dragging.target.y = w.y - state.dragging.oy;
+      }else{
+        state.pan.x = state.dragging.startPanX + (e.clientX - state.dragging.startX) * DPR / state.zoom;
+        state.pan.y = state.dragging.startPanY + (e.clientY - state.dragging.startY) * DPR / state.zoom;
+      }
+    }
+  });
+  window.addEventListener('pointerup', (e) => {
+    if(!pointers.has(e.pointerId)) return;
+    const p = pointers.get(e.pointerId);
+    const moved = p.dist;
+    if(state.clickedBody && moved < 8 && state.clickedBody.url){
+      window.open(state.clickedBody.url,'_blank');
+      pulseNode(state.clickedBody.id);
+    }
+    pointers.delete(e.pointerId);
+    if(pointers.size<2) lastPinchDist=0;
+    state.dragging=null; state.clickedBody=null; canvas.style.cursor='grab';
+  });
+  canvas.addEventListener('wheel', (e) => { e.preventDefault(); zoomAt(e.deltaY<0?1.08:0.92, e.clientX, e.clientY); }, {passive:false});
+
+  function zoomAt(f, sx, sy){
+    const before = worldFromScreen(sx, sy);
+    state.zoom = Math.max(0.5, Math.min(3.5, state.zoom * f));
+    const after = worldFromScreen(sx, sy);
+    state.pan.x += before.x - after.x; state.pan.y += before.y - after.y;
+  }
+  function findBodyAt(x,y, inflate=12){
+    for(const b of Object.values(state.bodies)){
+      if(b.x==null || b.y==null) continue;
+      const dist = Math.hypot(b.x - x, b.y - y);
+      if(dist < (b.r + inflate) / state.zoom) return b;
+    }
+    return null;
+  }
+
+  // ---------------- SAFE MODE / ERRORS ----------------
+  function setStatusOK(){ statusLight.className='light'; statusText.textContent='OK — interactive'; recoverBtn.disabled=true; }
+  function setStatusWarn(msg){ statusLight.className='light warn'; statusText.textContent=msg||'Limited'; }
+  function setStatusErr(msg){ statusLight.className='light err'; statusText.textContent=msg||'Error'; }
+  function stopLoop(){ if(RAF){ cancelAnimationFrame(RAF); RAF=null; } }
+  function startLoop(){ if(!RAF){ RAF = requestAnimationFrame(frame); } }
+
+  function fail(err){
+    stopLoop(); setStatusErr('Renderer halted'); errorState = err;
+    bannerMsg.textContent = (err && err.message) ? err.message : 'Unknown error';
+    banner.style.display='block'; recoverBtn.disabled=false;
+    mapView.style.display='none'; listView.style.display='block'; lastView='list';
+  }
+  window.addEventListener('error', (e)=>{ fail(e.error||new Error(e.message||'window error')); });
+  window.addEventListener('unhandledrejection', (e)=>{ fail(e.reason||new Error('unhandled rejection')); });
+
+  safeModeEl.addEventListener('change', ()=>{
+    if(safeModeEl.checked){
+      state.animate = false; animRange.value='0'; speedLbl.textContent='off';
+      state.chipMode = 'label'; chipModeSel.value='label';
+      setStatusWarn('Safe Mode — reduced effects');
+    }else setStatusOK();
+    resize();
+  });
+
+  blackenedEl.addEventListener('change', ()=>{
+    document.documentElement.classList.toggle('blackened', blackenedEl.checked);
+  });
+
+  forceError.addEventListener('click', ()=>{ setTimeout(()=>{ throw new Error('Simulated failure (Test Fail)'); }, 0); });
+  function recover(){
+    banner.style.display='none'; errorState=null; setStatusOK(); resize(); startLoop();
+    if(lastView==='list'){ /* keep list if user prefers */ } else { showMap(); }
+  }
+  document.getElementById('recover').addEventListener('click', recover);
+  bannerRec.addEventListener('click', recover);
+  gotoList.addEventListener('click', ()=>{ showList(); });
+
+  // ---------------- VIEW TOGGLING ----------------
+  function showMap(){ mapView.style.display='block'; listView.style.display='none'; textFallback.style.display='none'; toggleView.textContent='List View'; lastView='map'; }
+  function showList(){ mapView.style.display='none'; listView.style.display='block'; textFallback.style.display='none'; toggleView.textContent='Map View'; lastView='list'; }
+  function showText(){ mapView.style.display='none'; listView.style.display='none'; textFallback.style.display='block'; toggleView.textContent='Map View'; lastView='text'; }
+  toggleView.addEventListener('click', ()=>{ (lastView==='map') ? showList() : showMap(); });
+
+  // ---------------- CONTROLS ----------------
+  document.getElementById('openInfo').onclick = ()=>{ renderInfoLinks(); infoDlg.showModal(); };
+  document.getElementById('seed').onclick = ()=>{ seed = (Math.random()*1e6|0); vibrate([10,20,10]); };
+  document.getElementById('reset').onclick = ()=>{ state.pan={x:0,y:0}; state.zoom=1; seed=(Math.random()*1e4|0); vibrate(10); };
+  document.getElementById('snap').onclick = ()=>{
+    try{ const a = document.createElement('a'); a.download = `artifact_${Date.now()}.png`; a.href = canvas.toDataURL('image/png'); a.click(); }catch(e){ fail(e); }
+  };
+  modeSel.oninput   = ()=> state.mode = modeSel.value;
+  animRange.oninput = ()=>{ state.animate = (animRange.value==='1') && !safeModeEl.checked; speedLbl.textContent = state.animate ? 'on':'off'; };
+  drift.oninput     = ()=> state.noise = +drift.value;
+  chipModeSel.oninput = ()=>{ state.chipMode = chipModeSel.value; updateChips(); drawLeaders(); };
+
+  // ---------------- AUDIO (WebAudio) ----------------
+  function makeDistortion(amount=0.3){
+    const n=44100, curve=new Float32Array(n); const deg=Math.PI/180;
+    const k = amount*200; // harsher with amount
+    for (let i=0;i<n;i++){ const x = i*2/n-1; curve[i] = (3+k)*x*20*deg / (Math.PI + k*Math.abs(x)); }
+    return curve;
+  }
+
+  function initAudio(){
+    if(audio.ctx) return;
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const master = ctx.createGain(); master.gain.value = +vol.value;
+    const shaper = ctx.createWaveShaper(); shaper.curve = makeDistortion(+distAmt.value);
+    const delay = ctx.createDelay(1.0); delay.delayTime.value = +delayAmt.value;
+    const feedback = ctx.createGain(); feedback.gain.value = 0.35;
+
+    // master chain: node -> shaper -> delay -> feedback loop -> master -> out
+    shaper.connect(delay); delay.connect(feedback); feedback.connect(delay);
+    delay.connect(master); shaper.connect(master); master.connect(ctx.destination);
+
+    // per-node oscillators
+    const nodes = {};
+    for(const d of DATA){
+      const g = ctx.createGain(); g.gain.value = 0.0; // silent until pulsed
+      const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 0;
+      o.connect(g); g.connect(shaper);
+      o.start();
+      nodes[d.id] = {osc:o, gain:g};
+    }
+
+    audio = {ctx, master, gain:master, shaper, delay, feedback, nodes};
+  }
+
+  function updateAudio(){
+    if(!audio.ctx) return;
+    // global parameters
+    audio.master.gain.value = +vol.value;
+    audio.shaper.curve = makeDistortion(+distAmt.value);
+    audio.delay.delayTime.value = +delayAmt.value;
+
+    // map positions to frequencies
+    const center = {x:0,y:0};
+    for(const d of DATA){
+      const b = state.bodies[d.id];
+      // distance from center -> base frequency; angle jitters via t
+      const dist = Math.hypot(b.x - center.x, b.y - center.y) + 1;
+      const f0 = 40 + 2.2*dist; // low & grim
+      const jitter = 2*Math.sin((b.x+b.y+t*40)/40);
+      const osc = audio.nodes[d.id].osc;
+      osc.frequency.setTargetAtTime(Math.max(20,f0+jitter), audio.ctx.currentTime, 0.08);
+
+      // gentle breathing if Blackened
+      const g = audio.nodes[d.id].gain;
+      const base = 0.0;
+      const trem = blackenedEl.checked ? (0.02 + 0.02*Math.max(0,Math.sin(t*10 + b.x/30))) : 0.0;
+      g.gain.setTargetAtTime(base + trem, audio.ctx.currentTime, 0.05);
+    }
+  }
+
+  function pulseNode(id){
+    if(!audio.ctx) return;
+    const g = audio.nodes[id]?.gain; if(!g) return;
+    // short emphasis burst
+    const t0 = audio.ctx.currentTime;
+    g.gain.cancelScheduledValues(t0);
+    g.gain.setValueAtTime(g.gain.value, t0);
+    g.gain.linearRampToValueAtTime(0.18, t0+0.04);
+    g.gain.exponentialRampToValueAtTime(0.02, t0+0.25);
+    g.gain.linearRampToValueAtTime(0.0, t0+0.45);
+  }
+
+  function blast(){
+    if(!audio.ctx) return;
+    const ctx = audio.ctx;
+    const dur = 0.35, rate=ctx.sampleRate, len = Math.floor(dur*rate);
+    const buf = ctx.createBuffer(1,len,rate), ch = buf.getChannelData(0);
+    for(let i=0;i<len;i++){ ch[i] = (Math.random()*2-1) * (1 - i/len); } // decaying noise
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const g = ctx.createGain(); g.gain.value = 0.3;
+    src.connect(g); g.connect(audio.shaper); src.start();
+  }
+
+  enableSoundBtn.addEventListener('click', async ()=>{
+    try{
+      initAudio();
+      await audio.ctx.resume();
+      enableSoundBtn.disabled = true; enableSoundBtn.textContent = 'Sound On';
+      pulseNode('sun');
+    }catch(e){ fail(e); }
+  });
+  blastBtn.addEventListener('click', ()=>blast());
+
+  // ---------------- INIT ----------------
+  function renderAll(){
+    renderDock(); renderList(); renderTextFallback(); createChips(); renderInfoLinks();
+  }
+  function boot(){
+    try{
+      renderAll();
+      window.addEventListener('resize', resize, {passive:true});
+      resize(); startLoop(); setStatusOK(); showMap();
+    }catch(e){ fail(e); showText(); }
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
