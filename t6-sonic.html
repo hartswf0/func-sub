@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Holographic Radar Sequencer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: radial-gradient(ellipse at center, #0a0a1a 0%, #000 100%);
+            color: #e0e0ff;
+            overflow: hidden;
+            touch-action: none;
+            height: 100vh;
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 0.5rem 1rem;
+            background: rgba(15, 15, 20, 0.8);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+            font-size: 0.75rem;
+        }
+
+        .btn {
+            padding: 0.4rem 0.8rem;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: #00d4ff;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn:active, .btn.active {
+            background: rgba(0, 212, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.3rem 0.6rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+        }
+
+        input[type="range"] {
+            width: 60px;
+            height: 4px;
+            background: rgba(0, 212, 255, 0.2);
+            border-radius: 2px;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #00d4ff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.6);
+        }
+
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            overflow: hidden;
+        }
+
+        @media (min-width: 768px) {
+            main { grid-template-columns: 1fr 1fr; }
+        }
+
+        .radar-container {
+            position: relative;
+            background: rgba(15, 15, 20, 0.5);
+            border-radius: 12px;
+            border: 1px solid rgba(0, 212, 255, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .radar-title {
+            text-align: center;
+            font-size: 0.7rem;
+            letter-spacing: 0.15em;
+            padding: 0.5rem;
+            color: #667;
+            text-transform: uppercase;
+        }
+
+        .radar-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            max-width: 600px;
+            max-height: 600px;
+        }
+
+        .playhead {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 40%;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.8));
+            transform-origin: top center;
+            transform: translate(-50%, 0) rotate(0deg);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            filter: blur(1px);
+        }
+
+        .playhead.active {
+            opacity: 1;
+        }
+
+        .control-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .ring-dial {
+            position: absolute;
+            cursor: pointer;
+            pointer-events: all;
+            transition: transform 0.2s;
+        }
+
+        .ring-dial:active {
+            transform: scale(1.1);
+        }
+
+        .node-indicator {
+            fill: rgba(0, 212, 255, 0.3);
+            stroke: #00d4ff;
+            stroke-width: 2;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .node-indicator:hover, .node-indicator.active {
+            fill: rgba(0, 212, 255, 0.6);
+            stroke-width: 3;
+            filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.8));
+        }
+
+        .axis-label {
+            fill: #667;
+            font-size: 11px;
+            text-anchor: middle;
+            pointer-events: none;
+            letter-spacing: 0.05em;
+        }
+
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 15, 20, 0.9);
+            padding: 0.4rem 1rem;
+            font-size: 0.7rem;
+            color: #667;
+            border-top: 1px solid rgba(0, 212, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff3366;
+            display: inline-block;
+            margin-right: 0.5rem;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .status-indicator.active {
+            background: #00ff88;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .trace-layer {
+            opacity: 0.3;
+            mix-blend-mode: screen;
+        }
+
+        .current-layer {
+            filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.5));
+        }
+
+        .future-layer {
+            stroke-dasharray: 4 4;
+            animation: pulse 3s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="controls">
+                <button class="btn" id="playBtn">▶ PLAY</button>
+                <button class="btn" id="toggleModeBtn">T0</button>
+                <div class="slider-group">
+                    <span>BPM</span>
+                    <input type="range" id="bpmSlider" min="40" max="180" value="90">
+                    <span id="bpmValue">90</span>
+                </div>
+                <div class="slider-group">
+                    <span>Depth</span>
+                    <input type="range" id="depthSlider" min="5" max="50" value="20">
+                    <span id="depthValue">20</span>
+                </div>
+                <div class="slider-group">
+                    <span>Echo</span>
+                    <input type="range" id="echoSlider" min="0" max="100" value="60">
+                    <span id="echoValue">60</span>
+                </div>
+                <button class="btn" onclick="loadPreset('random')">⚡ RANDOMIZE</button>
+            </div>
+        </header>
+
+        <main>
+            <div class="radar-container">
+                <div class="radar-title">12-Axis Pairs Manifold</div>
+                <div class="radar-wrapper" id="pairsWrapper">
+                    <svg id="pairsSvg" viewBox="-250 -250 500 500">
+                        <defs>
+                            <filter id="glow">
+                                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                            <radialGradient id="nodeGrad">
+                                <stop offset="0%" stop-color="rgba(0,212,255,0.8)"/>
+                                <stop offset="100%" stop-color="rgba(0,212,255,0)"/>
+                            </radialGradient>
+                        </defs>
+                    </svg>
+                    <div class="playhead" id="pairsPlayhead"></div>
+                </div>
+            </div>
+
+            <div class="radar-container">
+                <div class="radar-title">6-Axis Meta Stream</div>
+                <div class="radar-wrapper" id="metaWrapper">
+                    <svg id="metaSvg" viewBox="-250 -250 500 500">
+                        <defs>
+                            <filter id="glow2">
+                                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                        </defs>
+                    </svg>
+                    <div class="playhead" id="metaPlayhead"></div>
+                </div>
+            </div>
+        </main>
+
+        <div class="status-bar">
+            <span><span class="status-indicator" id="audioStatus"></span>AUDIO</span>
+            <span>MODE: <span id="modeDisplay">T0 (CURRENT)</span></span>
+            <span>STEP: <span id="stepCounter">0</span></span>
+        </div>
+    </div>
+
+    <script>
+        const data = {
+            pairs: {
+                axes: ['Instinct', 'Reason', 'Seen', 'Unseen', 'Ideas', 'Ideology', 'Source', 'Resource', 'Heart', 'Head', 'Parts', 'Whole'],
+                notes: ['C3', 'D3', 'E3', 'F3', 'G3', 'A3', 'B3', 'C4', 'D4', 'E4', 'F4', 'G4'],
+                t0: [5, 6, 5, 7, 6, 4, 5, 8, 7, 5, 6, 7],
+                t1: [6, 7, 6, 8, 7, 5, 6, 9, 8, 6, 7, 8],
+                history: []
+            },
+            meta: {
+                axes: ['Identity', 'Experience', 'Language', 'Domain', 'Purpose', 'Order'],
+                notes: ['C2', 'E2', 'G2', 'C3', 'E3', 'G3'],
+                t0: [6, 7, 5, 6, 8, 5],
+                t1: [7, 8, 6, 7, 9, 6],
+                history: []
+            }
+        };
+
+        let config = {
+            isPlaying: false,
+            currentMode: 't0',
+            bpm: 90,
+            historyDepth: 20,
+            echoAmount: 0.6,
+            selectedAxis: null,
+            audioReady: false,
+            step: 0
+        };
+
+        let synth, reverb, delay, filter;
+
+        async function initAudio() {
+            try {
+                await Tone.start();
+                
+                filter = new Tone.Filter({
+                    frequency: 2000,
+                    type: 'lowpass',
+                    rolloff: -24
+                }).toDestination();
+
+                delay = new Tone.FeedbackDelay({
+                    delayTime: '8n',
+                    feedback: 0.4,
+                    wet: 0.3
+                }).connect(filter);
+
+                reverb = new Tone.Reverb({
+                    decay: 8,
+                    wet: 0.6
+                }).connect(delay);
+
+                synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'sine' },
+                    envelope: { 
+                        attack: 0.3, 
+                        decay: 1.2, 
+                        sustain: 0.3, 
+                        release: 2.5 
+                    }
+                }).connect(reverb);
+                
+                synth.volume.value = -18;
+
+                config.audioReady = true;
+                document.getElementById('audioStatus').classList.add('active');
+                return true;
+            } catch (e) {
+                console.error('Audio init failed:', e);
+                return false;
+            }
+        }
+
+        function generateHistory(type) {
+            const current = data[type][config.currentMode];
+            data[type].history = [];
+            
+            for (let i = 0; i < config.historyDepth; i++) {
+                const age = i / config.historyDepth;
+                const noise = () => (Math.random() - 0.5) * 2;
+                
+                const snapshot = current.map((val, idx) => {
+                    const drift = Math.sin(i * 0.3 + idx) * 1.5;
+                    return Math.max(1, Math.min(9, val + drift + noise() * age));
+                });
+                
+                data[type].history.unshift(snapshot);
+            }
+        }
+
+        function polarToCart(angle, radius) {
+            return {
+                x: Math.cos(angle) * radius,
+                y: Math.sin(angle) * radius
+            };
+        }
+
+        function createSmoothPath(values, maxRadius) {
+            const points = values.map((val, i) => {
+                const angle = (i / values.length) * Math.PI * 2 - Math.PI / 2;
+                const r = (val / 9) * maxRadius;
+                return polarToCart(angle, r);
+            });
+
+            let path = `M ${points[0].x},${points[0].y}`;
+            
+            for (let i = 0; i < points.length; i++) {
+                const p0 = points[(i - 1 + points.length) % points.length];
+                const p1 = points[i];
+                const p2 = points[(i + 1) % points.length];
+                
+                const cp1x = p1.x + (p2.x - p0.x) * 0.15;
+                const cp1y = p1.y + (p2.y - p0.y) * 0.15;
+                
+                path += ` Q ${cp1x},${cp1y} ${p2.x},${p2.y}`;
+            }
+            
+            path += ' Z';
+            return path;
+        }
+
+        function drawRadar(type) {
+            const svg = document.getElementById(`${type}Svg`);
+            const radius = 200;
+            const axisCount = data[type].axes.length;
+            
+            // Clear existing (keep defs)
+            const defs = svg.querySelector('defs');
+            svg.innerHTML = '';
+            svg.appendChild(defs);
+
+            // Grid circles
+            for (let i = 1; i <= 3; i++) {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('r', (radius / 3) * i);
+                circle.setAttribute('fill', 'none');
+                circle.setAttribute('stroke', 'rgba(255,255,255,0.05)');
+                circle.setAttribute('stroke-width', '1');
+                svg.appendChild(circle);
+            }
+
+            // Axes
+            data[type].axes.forEach((axis, i) => {
+                const angle = (i / axisCount) * Math.PI * 2 - Math.PI / 2;
+                const end = polarToCart(angle, radius);
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', '0');
+                line.setAttribute('y1', '0');
+                line.setAttribute('x2', end.x);
+                line.setAttribute('y2', end.y);
+                line.setAttribute('stroke', 'rgba(255,255,255,0.08)');
+                line.setAttribute('stroke-width', '1');
+                svg.appendChild(line);
+
+                // Label
+                const labelPos = polarToCart(angle, radius + 30);
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', labelPos.x);
+                text.setAttribute('y', labelPos.y + 4);
+                text.setAttribute('class', 'axis-label');
+                text.textContent = axis.toUpperCase();
+                svg.appendChild(text);
+            });
+
+            // Draw history traces
+            if (data[type].history.length === 0) {
+                generateHistory(type);
+            }
+
+            data[type].history.forEach((snapshot, i) => {
+                const age = i / data[type].history.length;
+                const opacity = age * 0.3;
+                
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', createSmoothPath(snapshot, radius));
+                path.setAttribute('fill', `rgba(0, 212, 255, ${opacity * 0.1})`);
+                path.setAttribute('stroke', `rgba(0, 212, 255, ${opacity})`);
+                path.setAttribute('stroke-width', '1');
+                path.setAttribute('class', 'trace-layer');
+                svg.appendChild(path);
+            });
+
+            // Current state
+            const currentValues = data[type][config.currentMode];
+            const currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            currentPath.setAttribute('d', createSmoothPath(currentValues, radius));
+            currentPath.setAttribute('fill', 'rgba(0, 212, 255, 0.15)');
+            currentPath.setAttribute('stroke', '#00d4ff');
+            currentPath.setAttribute('stroke-width', '3');
+            currentPath.setAttribute('class', 'current-layer');
+            currentPath.setAttribute('filter', 'url(#glow)');
+            svg.appendChild(currentPath);
+
+            // Future state (if T0 mode)
+            if (config.currentMode === 't0') {
+                const futurePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                futurePath.setAttribute('d', createSmoothPath(data[type].t1, radius));
+                futurePath.setAttribute('fill', 'none');
+                futurePath.setAttribute('stroke', 'rgba(0, 255, 136, 0.5)');
+                futurePath.setAttribute('stroke-width', '2');
+                futurePath.setAttribute('class', 'future-layer');
+                svg.appendChild(futurePath);
+            }
+
+            // Node indicators with ring dials
+            currentValues.forEach((val, i) => {
+                const angle = (i / axisCount) * Math.PI * 2 - Math.PI / 2;
+                const pos = polarToCart(angle, (val / 9) * radius);
+                
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                
+                // Dial ring
+                const ringRadius = 12;
+                const ringCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                ringCircle.setAttribute('cx', pos.x);
+                ringCircle.setAttribute('cy', pos.y);
+                ringCircle.setAttribute('r', ringRadius);
+                ringCircle.setAttribute('fill', 'rgba(0, 212, 255, 0.1)');
+                ringCircle.setAttribute('stroke', '#00d4ff');
+                ringCircle.setAttribute('stroke-width', '1.5');
+                ringCircle.setAttribute('class', 'node-indicator');
+                ringCircle.dataset.type = type;
+                ringCircle.dataset.index = i;
+                g.appendChild(ringCircle);
+
+                // Value indicator
+                const valueArc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                valueArc.setAttribute('cx', pos.x);
+                valueArc.setAttribute('cy', pos.y);
+                valueArc.setAttribute('r', 6);
+                valueArc.setAttribute('fill', 'url(#nodeGrad)');
+                g.appendChild(valueArc);
+
+                svg.appendChild(g);
+            });
+        }
+
+        function handleNodeInteraction(e) {
+            const target = e.target.closest('.node-indicator');
+            if (!target) return;
+
+            const type = target.dataset.type;
+            const index = parseInt(target.dataset.index);
+            
+            if (config.audioReady && synth) {
+                const note = data[type].notes[index];
+                const velocity = data[type][config.currentMode][index] / 9;
+                synth.triggerAttackRelease(note, '4n', undefined, velocity * 0.8);
+            }
+
+            // Visual feedback
+            target.classList.add('active');
+            setTimeout(() => target.classList.remove('active'), 300);
+        }
+
+        let sequence;
+
+        function startSequence() {
+            if (!config.audioReady) return;
+
+            Tone.Transport.bpm.value = config.bpm;
+            
+            // Pairs sequence
+            const pairsSeq = new Tone.Sequence((time, index) => {
+                const velocity = data.pairs[config.currentMode][index] / 9;
+                const note = data.pairs.notes[index];
+                synth.triggerAttackRelease(note, '8n', time, velocity * 0.7);
+                
+                Tone.Draw.schedule(() => {
+                    const angle = (index / data.pairs.axes.length) * 360;
+                    document.getElementById('pairsPlayhead').style.transform = 
+                        `translate(-50%, 0) rotate(${angle}deg)`;
+                }, time);
+            }, [...Array(data.pairs.axes.length).keys()], '8n');
+            
+            // Meta sequence (slower)
+            const metaSeq = new Tone.Sequence((time, index) => {
+                const velocity = data.meta[config.currentMode][index] / 9;
+                const note = data.meta.notes[index];
+                synth.triggerAttackRelease(note, '4n', time, velocity * 0.6);
+                
+                Tone.Draw.schedule(() => {
+                    const angle = (index / data.meta.axes.length) * 360;
+                    document.getElementById('metaPlayhead').style.transform = 
+                        `translate(-50%, 0) rotate(${angle}deg)`;
+                    
+                    config.step++;
+                    document.getElementById('stepCounter').textContent = config.step;
+                    
+                    // Evolve data slowly
+                    if (config.step % 8 === 0) {
+                        evolveData();
+                    }
+                }, time);
+            }, [...Array(data.meta.axes.length).keys()], '4n');
+            
+            pairsSeq.start(0);
+            metaSeq.start(0);
+            
+            return [pairsSeq, metaSeq];
+        }
+
+        function evolveData() {
+            ['pairs', 'meta'].forEach(type => {
+                data[type][config.currentMode] = data[type][config.currentMode].map((val, i) => {
+                    const target = data[type].t1[i];
+                    const drift = (Math.random() - 0.5) * 0.3;
+                    const pull = (target - val) * 0.05;
+                    return Math.max(1, Math.min(9, val + pull + drift));
+                });
+            });
+            
+            generateHistory('pairs');
+            generateHistory('meta');
+            drawRadar('pairs');
+            drawRadar('meta');
+        }
+
+        async function togglePlay() {
+            if (!config.audioReady) {
+                await initAudio();
+            }
+
+            if (!config.isPlaying) {
+                config.isPlaying = true;
+                Tone.Transport.start();
+                sequence = startSequence();
+                document.getElementById('playBtn').textContent = '⏸ PAUSE';
+                document.getElementById('playBtn').classList.add('active');
+                document.getElementById('pairsPlayhead').classList.add('active');
+                document.getElementById('metaPlayhead').classList.add('active');
+            } else {
+                config.isPlaying = false;
+                Tone.Transport.stop();
+                Tone.Transport.cancel();
+                document.getElementById('playBtn').textContent = '▶ PLAY';
+                document.getElementById('playBtn').classList.remove('active');
+                document.getElementById('pairsPlayhead').classList.remove('active');
+                document.getElementById('metaPlayhead').classList.remove('active');
+            }
+        }
+
+        function toggleMode() {
+            config.currentMode = config.currentMode === 't0' ? 't1' : 't0';
+            const btn = document.getElementById('toggleModeBtn');
+            btn.textContent = config.currentMode.toUpperCase();
+            document.getElementById('modeDisplay').textContent = 
+                config.currentMode === 't0' ? 'T0 (CURRENT)' : 'T+1 (TARGET)';
+            
+            generateHistory('pairs');
+            generateHistory('meta');
+            drawRadar('pairs');
+            drawRadar('meta');
+        }
+
+        function loadPreset(type) {
+            if (type === 'random') {
+                data.pairs.t0 = Array(12).fill(0).map(() => Math.floor(Math.random() * 9) + 1);
+                data.meta.t0 = Array(6).fill(0).map(() => Math.floor(Math.random() * 9) + 1);
+                data.pairs.t1 = data.pairs.t0.map(v => Math.max(1, Math.min(9, v + Math.floor(Math.random() * 3) - 1)));
+                data.meta.t1 = data.meta.t0.map(v => Math.max(1, Math.min(9, v + Math.floor(Math.random() * 3) - 1)));
+            }
+            
+            generateHistory('pairs');
+            generateHistory('meta');
+            drawRadar('pairs');
+            drawRadar('meta');
+        }
+
+        // Event listeners
+        document.getElementById('playBtn').addEventListener('click', togglePlay);
+        document.getElementById('toggleModeBtn').addEventListener('click', toggleMode);
+
+        document.getElementById('bpmSlider').addEventListener('input', (e) => {
+            config.bpm = parseInt(e.target.value);
+            document.getElementById('bpmValue').textContent = config.bpm;
+            if (config.isPlaying) {
+                Tone.Transport.bpm.value = config.bpm;
+            }
+        });
+
+        document.getElementById('depthSlider').addEventListener('input', (e) => {
+            config.historyDepth = parseInt(e.target.value);
+            document.getElementById('depthValue').textContent = config.historyDepth;
+            generateHistory('pairs');
+            generateHistory('meta');
+            drawRadar('pairs');
+            drawRadar('meta');
+        });
+
+        document.getElementById('echoSlider').addEventListener('input', (e) => {
+            const amount = parseInt(e.target.value) / 100;
+            document.getElementById('echoValue').textContent = e.target.value;
+            if (reverb) {
+                reverb.wet.value = amount;
+                delay.wet.value = amount * 0.5;
+            }
+        });
+
+        document.getElementById('pairsSvg').addEventListener('click', handleNodeInteraction);
+        document.getElementById('metaSvg').addEventListener('click', handleNodeInteraction);
+        document.getElementById('pairsSvg').addEventListener('touchend', handleNodeInteraction);
+        document.getElementById('metaSvg').addEventListener('touchend', handleNodeInteraction);
+
+        // Initialize
+        window.addEventListener('load', () => {
+            generateHistory('pairs');
+            generateHistory('meta');
+            drawRadar('pairs');
+            drawRadar('meta');
+        });
+
+        window.addEventListener('resize', () => {
+            drawRadar('pairs');
+            drawRadar('meta');
+        });
+    </script>
+</body>
+</html>
