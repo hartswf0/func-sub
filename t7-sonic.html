@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Dual Turntable Radar Sequencer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            overflow-x: hidden;
+            touch-action: pan-y;
+        }
+
+        .container {
+            max-width: 100vw;
+            min-height: 100vh;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #333;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-size: clamp(1.2rem, 5vw, 1.8rem);
+            font-weight: 300;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #00ff88, #00ccff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .transport {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .transport-btn {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .transport-btn:active {
+            transform: scale(0.9);
+            background: rgba(0, 255, 136, 0.3);
+        }
+
+        .transport-btn.active {
+            background: #00ff88;
+            color: #0a0a0a;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+        }
+
+        .bpm-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            border: 1px solid #333;
+        }
+
+        .bpm-display {
+            font-size: 1.2rem;
+            font-weight: 600;
+            min-width: 80px;
+            text-align: center;
+            color: #00ccff;
+        }
+
+        .turntables {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            padding: 10px 0;
+            flex: 1;
+        }
+
+        @media (min-width: 768px) {
+            .turntables {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .turntable {
+            background: linear-gradient(135deg, rgba(20, 20, 20, 0.9), rgba(10, 10, 10, 0.9));
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid #222;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .turntable-title {
+            text-align: center;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            color: #888;
+        }
+
+        .turntable.pairs .turntable-title {
+            color: #00ff88;
+        }
+
+        .turntable.meta .turntable-title {
+            color: #00ccff;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            aspect-ratio: 1;
+            touch-action: none;
+        }
+
+        .radar-canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            cursor: grab;
+        }
+
+        .radar-canvas:active {
+            cursor: grabbing;
+        }
+
+        .playhead {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 45%;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #fff);
+            transform-origin: top center;
+            transform: translate(-50%, 0) rotate(0deg);
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .playhead.active {
+            opacity: 1;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .dials {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .dial-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dial {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #2a2a2a, #0f0f0f);
+            border: 3px solid #333;
+            position: relative;
+            cursor: pointer;
+            touch-action: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5), inset 0 -2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .dial::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            width: 3px;
+            height: 25px;
+            background: linear-gradient(to bottom, #fff, #888);
+            border-radius: 2px;
+            transform: translateX(-50%);
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+
+        .dial-label {
+            font-size: 0.75rem;
+            color: #888;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .dial-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #00ff88;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            margin: 10px 0;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 5px;
+            border-radius: 20px;
+        }
+
+        .mode-btn {
+            padding: 8px 16px;
+            border: 1px solid #333;
+            background: rgba(255, 255, 255, 0.05);
+            color: #888;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: #00ff88;
+            color: #0a0a0a;
+            border-color: #00ff88;
+        }
+
+        .presets {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 15px 0;
+        }
+
+        .preset-btn {
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #333;
+            border-radius: 20px;
+            color: #888;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .vinyl-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .vinyl-glow.active {
+            opacity: 1;
+        }
+
+        .turntable.pairs .vinyl-glow {
+            box-shadow: 0 0 60px rgba(0, 255, 136, 0.3);
+        }
+
+        .turntable.meta .vinyl-glow {
+            box-shadow: 0 0 60px rgba(0, 204, 255, 0.3);
+        }
+
+        @keyframes spin {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .spinning {
+            animation: spin 2s linear infinite;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        .status-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff3333;
+            box-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
+            z-index: 1000;
+        }
+
+        .status-indicator.active {
+            background: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="status-indicator" id="statusIndicator"></div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>Dual Radar Sequencer</h1>
+        </div>
+
+        <div class="transport">
+            <div class="transport-btn" id="playBtn">▶</div>
+            <div class="transport-btn" id="stopBtn">■</div>
+            <div class="bpm-control">
+                <button class="preset-btn" onclick="adjustBPM(-10)">-</button>
+                <div class="bpm-display" id="bpmDisplay">120 BPM</div>
+                <button class="preset-btn" onclick="adjustBPM(10)">+</button>
+            </div>
+        </div>
+
+        <div class="presets">
+            <button class="preset-btn" onclick="loadPreset('balanced')">Balanced</button>
+            <button class="preset-btn" onclick="loadPreset('intuitive')">Intuitive</button>
+            <button class="preset-btn" onclick="loadPreset('analytical')">Analytical</button>
+            <button class="preset-btn" onclick="loadPreset('random')">Random</button>
+        </div>
+
+        <div class="turntables">
+            <div class="turntable pairs">
+                <h2 class="turntable-title">Pairs Radar (12-Axis)</h2>
+                <div class="mode-toggle">
+                    <button class="mode-btn active" onclick="setMode('pairs', 't0')">T0</button>
+                    <button class="mode-btn" onclick="setMode('pairs', 't1')">T+1</button>
+                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="pairsRadar" class="radar-canvas"></canvas>
+                    <div class="playhead" id="pairsPlayhead"></div>
+                    <div class="vinyl-glow" id="pairsGlow"></div>
+                </div>
+                <div class="dials" id="pairsDials"></div>
+            </div>
+
+            <div class="turntable meta">
+                <h2 class="turntable-title">Meta Axes (6-Axis)</h2>
+                <div class="mode-toggle">
+                    <button class="mode-btn active" onclick="setMode('meta', 't0')">T0</button>
+                    <button class="mode-btn" onclick="setMode('meta', 't1')">T+1</button>
+                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="metaRadar" class="radar-canvas"></canvas>
+                    <div class="playhead" id="metaPlayhead"></div>
+                    <div class="vinyl-glow" id="metaGlow"></div>
+                </div>
+                <div class="dials" id="metaDials"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data structure
+        const data = {
+            pairs: {
+                axes: ['Instinct', 'Reason', 'Seen', 'Unseen', 'Ideas', 'Ideology', 'Source', 'Resource', 'Heart', 'Head', 'Parts', 'Whole'],
+                colors: ['#4dabf7', '#4dabf7', '#20c997', '#20c997', '#9775fa', '#9775fa', '#ffd43b', '#ffd43b', '#ff6b6b', '#ff6b6b', '#51cf66', '#51cf66'],
+                notes: ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'D5', 'E5', 'F5', 'G5'],
+                t0: [7, 6, 5, 7, 6, 4, 5, 8, 7, 5, 6, 7],
+                t1: [8, 7, 6, 8, 7, 5, 6, 9, 8, 6, 7, 8]
+            },
+            meta: {
+                axes: ['Identity', 'Experience', 'Language', 'Domain', 'Purpose', 'Order'],
+                colors: ['#4dabf7', '#20c997', '#9775fa', '#ffd43b', '#ff6b6b', '#51cf66'],
+                notes: ['C3', 'E3', 'G3', 'C4', 'E4', 'G4'],
+                t0: [6, 7, 5, 6, 8, 5],
+                t1: [7, 8, 6, 7, 9, 6]
+            }
+        };
+
+        let currentMode = { pairs: 't0', meta: 't0' };
+        let isPlaying = false;
+        let bpm = 120;
+        let audioContext;
+        let synths = { pairs: null, meta: null };
+        let sequences = { pairs: null, meta: null };
+
+        // Initialize Tone.js
+        async function initAudio() {
+            await Tone.start();
+            audioContext = Tone.context;
+            
+            // Create synths with ambient characteristics
+            synths.pairs = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'sine' },
+                envelope: { attack: 0.1, decay: 0.3, sustain: 0.4, release: 1.2 }
+            }).toDestination();
+            synths.pairs.volume.value = -12;
+            
+            synths.meta = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'triangle' },
+                envelope: { attack: 0.2, decay: 0.4, sustain: 0.3, release: 1.5 }
+            }).toDestination();
+            synths.meta.volume.value = -15;
+
+            // Add reverb
+            const reverb = new Tone.Reverb({ decay: 3, wet: 0.3 }).toDestination();
+            synths.pairs.connect(reverb);
+            synths.meta.connect(reverb);
+
+            document.getElementById('statusIndicator').classList.add('active');
+        }
+
+        // Canvas setup
+        const pairsCanvas = document.getElementById('pairsRadar');
+        const metaCanvas = document.getElementById('metaRadar');
+        const pairsCtx = pairsCanvas.getContext('2d');
+        const metaCtx = metaCanvas.getContext('2d');
+
+        function resizeCanvas() {
+            const setupCanvas = (canvas) => {
+                const size = Math.min(canvas.offsetWidth, canvas.offsetHeight);
+                canvas.width = size * 2;
+                canvas.height = size * 2;
+                const ctx = canvas.getContext('2d');
+                ctx.scale(2, 2);
+            };
+            setupCanvas(pairsCanvas);
+            setupCanvas(metaCanvas);
+            drawRadars();
+        }
+
+        function drawRadarBackground(ctx, size, axesCount) {
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const radius = size / 2 - 40;
+
+            // Concentric circles
+            for (let i = 1; i <= 3; i++) {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, (radius / 3) * i, 0, 2 * Math.PI);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            // Axes
+            for (let i = 0; i < axesCount; i++) {
+                const angle = (i * 2 * Math.PI / axesCount) - Math.PI / 2;
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(x, y);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            // Center dot
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 4, 0, 2 * Math.PI);
+            ctx.fillStyle = '#666';
+            ctx.fill();
+        }
+
+        function drawRadarPolygon(ctx, size, axesCount, values, color, filled = false) {
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const radius = size / 2 - 40;
+
+            ctx.beginPath();
+            for (let i = 0; i < axesCount; i++) {
+                const angle = (i * 2 * Math.PI / axesCount) - Math.PI / 2;
+                const value = values[i] / 9;
+                const x = centerX + Math.cos(angle) * radius * value;
+                const y = centerY + Math.sin(angle) * radius * value;
+                
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+
+            if (filled) {
+                ctx.fillStyle = color + '30';
+                ctx.fill();
+            }
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Draw points
+            for (let i = 0; i < axesCount; i++) {
+                const angle = (i * 2 * Math.PI / axesCount) - Math.PI / 2;
+                const value = values[i] / 9;
+                const x = centerX + Math.cos(angle) * radius * value;
+                const y = centerY + Math.sin(angle) * radius * value;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 5, 0, 2 * Math.PI);
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.strokeStyle = '#0a0a0a';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        function drawRadars() {
+            const pairsSize = pairsCanvas.width / 2;
+            const metaSize = metaCanvas.width / 2;
+
+            pairsCtx.clearRect(0, 0, pairsSize, pairsSize);
+            metaCtx.clearRect(0, 0, metaSize, metaSize);
+
+            drawRadarBackground(pairsCtx, pairsSize, 12);
+            drawRadarBackground(metaCtx, metaSize, 6);
+
+            const pairsValues = currentMode.pairs === 't0' ? data.pairs.t0 : data.pairs.t1;
+            const metaValues = currentMode.meta === 't0' ? data.meta.t0 : data.meta.t1;
+
+            drawRadarPolygon(pairsCtx, pairsSize, 12, pairsValues, '#00ff88', true);
+            drawRadarPolygon(metaCtx, metaSize, 6, metaValues, '#00ccff', true);
+        }
+
+        // Dial creation
+        function createDials() {
+            const pairsContainer = document.getElementById('pairsDials');
+            const metaContainer = document.getElementById('metaDials');
+
+            pairsContainer.innerHTML = '';
+            metaContainer.innerHTML = '';
+
+            const currentPairsValues = currentMode.pairs === 't0' ? data.pairs.t0 : data.pairs.t1;
+            const currentMetaValues = currentMode.meta === 't0' ? data.meta.t0 : data.meta.t1;
+
+            data.pairs.axes.forEach((axis, i) => {
+                const dialEl = createDial(axis, currentPairsValues[i], i, 'pairs');
+                pairsContainer.appendChild(dialEl);
+            });
+
+            data.meta.axes.forEach((axis, i) => {
+                const dialEl = createDial(axis, currentMetaValues[i], i, 'meta');
+                metaContainer.appendChild(dialEl);
+            });
+        }
+
+        function createDial(label, value, index, type) {
+            const container = document.createElement('div');
+            container.className = 'dial-container';
+
+            const dial = document.createElement('div');
+            dial.className = 'dial';
+            const rotation = ((value - 1) / 8) * 270 - 135;
+            dial.style.transform = `rotate(${rotation}deg)`;
+
+            const dialLabel = document.createElement('div');
+            dialLabel.className = 'dial-label';
+            dialLabel.textContent = label;
+
+            const dialValue = document.createElement('div');
+            dialValue.className = 'dial-value';
+            dialValue.textContent = value;
+
+            let isDragging = false;
+            let startY = 0;
+            let startValue = value;
+
+            const handleStart = (e) => {
+                isDragging = true;
+                startY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+                startValue = currentMode[type] === 't0' ? data[type].t0[index] : data[type].t1[index];
+                dial.style.cursor = 'grabbing';
+                e.preventDefault();
+            };
+
+            const handleMove = (e) => {
+                if (!isDragging) return;
+                const currentY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+                const delta = startY - currentY;
+                let newValue = Math.round(startValue + delta / 15);
+                newValue = Math.max(1, Math.min(9, newValue));
+
+                if (currentMode[type] === 't0') {
+                    data[type].t0[index] = newValue;
+                } else {
+                    data[type].t1[index] = newValue;
+                }
+
+                const rotation = ((newValue - 1) / 8) * 270 - 135;
+                dial.style.transform = `rotate(${rotation}deg)`;
+                dialValue.textContent = newValue;
+                drawRadars();
+
+                // Play note on change
+                if (synths[type]) {
+                    const note = data[type].notes[index];
+                    const velocity = newValue / 9;
+                    synths[type].triggerAttackRelease(note, '16n', undefined, velocity);
+                }
+            };
+
+            const handleEnd = () => {
+                isDragging = false;
+                dial.style.cursor = 'grab';
+            };
+
+            dial.addEventListener('mousedown', handleStart);
+            dial.addEventListener('touchstart', handleStart);
+            document.addEventListener('mousemove', handleMove);
+            document.addEventListener('touchmove', handleMove, { passive: false });
+            document.addEventListener('mouseup', handleEnd);
+            document.addEventListener('touchend', handleEnd);
+
+            container.appendChild(dial);
+            container.appendChild(dialLabel);
+            container.appendChild(dialValue);
+
+            return container;
+        }
+
+        // Transport controls
+        document.getElementById('playBtn').addEventListener('click', async () => {
+            if (!audioContext) await initAudio();
+            
+            if (!isPlaying) {
+                isPlaying = true;
+                Tone.Transport.bpm.value = bpm;
+                Tone.Transport.start();
+                
+                startSequence('pairs');
+                startSequence('meta');
+                
+                document.getElementById('playBtn').classList.add('active');
+                document.getElementById('pairsGlow').classList.add('active');
+                document.getElementById('metaGlow').classList.add('active');
+                document.getElementById('pairsPlayhead').classList.add('active');
+                document.getElementById('metaPlayhead').classList.add('active');
+            }
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            isPlaying = false;
+            Tone.Transport.stop();
+            Tone.Transport.cancel();
+            
+            document.getElementById('playBtn').classList.remove('active');
+            document.getElementById('pairsGlow').classList.remove('active');
+            document.getElementById('metaGlow').classList.remove('active');
+            document.getElementById('pairsPlayhead').classList.remove('active');
+            document.getElementById('metaPlayhead').classList.remove('active');
+        });
+
+        function startSequence(type) {
+            const values = currentMode[type] === 't0' ? data[type].t0 : data[type].t1;
+            const axesCount = values.length;
+            
+            sequences[type] = new Tone.Sequence((time, index) => {
+                const velocity = values[index] / 9;
+                const note = data[type].notes[index];
+                synths[type].triggerAttackRelease(note, '8n', time, velocity);
+                
+                // Update playhead
+                Tone.Draw.schedule(() => {
+                    const playhead = document.getElementById(`${type}Playhead`);
+                    const rotation = (index / axesCount) * 360;
+                    playhead.style.transform = `translate(-50%, 0) rotate(${rotation}deg)`;
+                }, time);
+            }, [...Array(axesCount).keys()], '8n');
+            
+            sequences[type].start(0);
+        }
+
+        function adjustBPM(delta) {
+            bpm = Math.max(60, Math.min(200, bpm + delta));
+            Tone.Transport.bpm.value = bpm;
+            document.getElementById('bpmDisplay').textContent = `${bpm} BPM`;
+        }
+
+        function setMode(type, mode) {
+            currentMode[type] = mode;
+            const buttons = document.querySelectorAll(`.turntable.${type} .mode-btn`);
+            buttons.forEach((btn, i) => {
+                btn.classList.toggle('active', i === (mode === 't0' ? 0 : 1));
+            });
+            createDials();
+            drawRadars();
+        }
+
+        function loadPreset(type) {
+            switch(type) {
+                case 'balanced':
+                    data.pairs.t0 = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5];
+                    data.meta.t0 = [5, 5, 5, 5, 5, 5];
+                    break;
+                case 'intuitive':
+                    data.pairs.t0 = [8, 3, 6, 7, 7, 4, 4, 6, 8, 3, 5, 6];
+                    data.meta.t0 = [7, 8, 6, 5, 7, 4];
+                    break;
+                case 'analytical':
+                    data.pairs.t0 = [3, 8, 7, 5, 4, 8, 7, 8, 3, 8, 7, 8];
+                    data.meta.t0 = [5, 6, 8, 8, 6, 8];
+                    break;
+                case 'random':
+                    data.pairs.t0 = data.pairs.t0.map(() => Math.floor(Math.random() * 9) + 1);
+                    data.meta.t0 = data.meta.t0.map(() => Math.floor(Math.random() * 9) + 1);
+                    break;
+            }
+            createDials();
+            drawRadars();
+        }
+
+        // Initialize
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('load', () => {
+            resizeCanvas();
+            createDials();
+        });
+    </script>
+</body>
+</html>
