@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Training Grounds Oracle — First Principles</title>
+<style>
+  :root{
+    --bg:#0b0f14; --fg:#e9f4ff; --muted:#9fb3c8; --ink:#001219;
+    --card:#0f1620; --line:#223042; --accent:#38bdf8; --good:#22c55e; --bad:#ff5d5d; --warn:#f59e0b;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--fg); font:14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  }
+  header{
+    position:sticky; top:0; z-index:10;
+    background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0));
+    border-bottom:1px solid var(--line);
+    padding:12px 16px;
+    display:flex; gap:16px; align-items:center; flex-wrap:wrap;
+  }
+  header h1{font-size:16px; margin:0; letter-spacing:.3px}
+  header .tag{border:1px solid var(--line); padding:4px 8px; border-radius:999px; font-size:12px; color:#cfe7ff}
+  .wrap{display:grid; grid-template-columns:360px 1fr; gap:18px; padding:16px; max-width:1400px; margin:0 auto}
+  @media (max-width:1020px){ .wrap{ grid-template-columns:1fr; } }
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px;
+    box-shadow:0 10px 40px rgba(0,0,0,.25);
+  }
+  .section-title{font-weight:700; font-size:13px; letter-spacing:.3px; color:#d9eeff; margin:2px 0 8px}
+  .controls .row{display:grid; grid-template-columns:1fr; gap:8px}
+  .controls textarea{
+    width:100%; min-height:132px; resize:vertical; border-radius:10px; background:#0a1220; color:var(--fg);
+    border:1px solid var(--line); padding:10px; outline: none;
+  }
+  label.small{font-size:12px; color:var(--muted)}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px}
+  input[type="text"], input[type="password"], select{
+    width:100%; border-radius:8px; border:1px solid var(--line); background:#0a1220; color:var(--fg); padding:8px 10px;
+  }
+  button{
+    border:1px solid var(--line); background:#0b1422; color:#cfe7ff; padding:8px 12px; border-radius:999px; cursor:pointer;
+    transition:all .15s; font-weight:600;
+  }
+  button:hover{ background:var(--accent); color:var(--ink); border-color:var(--accent); transform:translateY(-1px) }
+  button.ghost{background:transparent}
+  button.good{ background:var(--good); color:#00250c; border-color:var(--good) }
+  button.bad{ background:#ff7d7d; color:#310000; border-color:#ff7d7d }
+  .btnrow{display:flex; gap:8px; flex-wrap:wrap}
+  .pill{border:1px solid var(--line); border-radius:10px; padding:6px 8px; font-size:12px; color:#cde5ff}
+  .log{max-height:220px; overflow:auto; padding:8px; background:#0a1220; border:1px dashed var(--line); border-radius:10px}
+  .log .entry{padding:6px 4px; border-bottom:1px dashed #1b2a3d; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
+  .log .entry:last-child{border-bottom:0}
+  .vizgrid{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  @media (max-width:1200px){ .vizgrid{ grid-template-columns:1fr; } }
+  .canvas-box{background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0)); border:1px solid var(--line); border-radius:12px; padding:8px}
+  .canvas-title{display:flex; gap:8px; align-items:center; justify-content:space-between}
+  canvas{width:100%; height:360px; display:block; border-radius:8px; background:rgba(255,255,255,0.02)}
+  .mini{height:280px}
+  .legend{display:flex; gap:12px; align-items:center; font-size:12px; color:#cfe7ff}
+  .sw{width:10px; height:10px; border-radius:2px; display:inline-block; vertical-align:-2px}
+  .sw.past{background:rgba(120,120,120,.6); outline:1px dashed #666}
+  .sw.t0{background:var(--accent)}
+  .sw.t1{background:var(--good)}
+  .ops{display:flex; gap:8px; flex-wrap:wrap}
+  .ops button.active{ background:var(--good); color:#001007; border-color:var(--good) }
+  details.narr{margin-top:10px}
+  details.narr summary{cursor:pointer; list-style:none; padding:6px 8px; border:1px solid var(--line); border-radius:8px; font-weight:700}
+  details.narr[open] summary{background:rgba(255,255,255,.03)}
+  .nbody{padding:8px; border:1px solid var(--line); border-top:0; border-radius:0 0 8px 8px; display:grid; gap:8px}
+  .nsec{padding:8px; background:#0a1220; border:1px solid var(--line); border-radius:8px}
+  .ok{color:var(--good)} .warn{color:var(--warn)} .err{color:var(--bad)}
+  .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; background:#0a1220; padding:2px 6px; border-radius:6px; border:1px solid var(--line)}
+  footer{opacity:.8; text-align:center; font-size:12px; padding:14px}
+</style>
+</head>
+<body>
+  <header>
+    <h1>Training Grounds Oracle — <span class="tag">First Principles</span></h1>
+    <span class="tag">S→I→G Operators</span>
+    <span class="tag">9×9 Grid</span>
+    <span class="tag">Dual Radars</span>
+  </header>
+
+  <div class="wrap">
+    <!-- LEFT: Controls -->
+    <section class="card controls">
+      <div class="section-title">Oracle Input</div>
+      <div class="row">
+        <label class="small" for="inputText">Paste a chat snippet or write a short statement to analyze:</label>
+        <textarea id="inputText" placeholder="Example: 'We should ship the MVP this Friday. Because the data shows 78% of users only need the core. I'm excited but nervous—let's sequence risks and publish the plan.'"></textarea>
+      </div>
+      <div class="section-title" style="margin-top:10px">OpenAI (optional)</div>
+      <div class="grid2">
+        <div>
+          <label class="small">API Key</label>
+          <input type="password" id="apiKey" placeholder="sk-..." />
+        </div>
+        <div>
+          <label class="small">Model</label>
+          <input type="text" id="modelName" value="gpt-4o-mini" />
+        </div>
+      </div>
+      <div class="btnrow" style="margin-top:10px">
+        <button id="btnAnalyzeLocal">Analyze Locally</button>
+        <button id="btnAnalyzeOpenAI">Analyze via OpenAI</button>
+        <button id="btnSimDemo" class="ghost">Simulate Update</button>
+      </div>
+
+      <div class="section-title" style="margin-top:14px">Operator Controls</div>
+      <div class="ops btnrow">
+        <button class="op" data-op="shed">🔪 Shed</button>
+        <button class="op" data-op="integrate">🔗 Integrate</button>
+        <button class="op" data-op="ground">⚓ Ground</button>
+        <button id="btnApplySuggested" class="good">Apply Suggested</button>
+        <span class="pill">Suggested: <span id="suggestedOp">—</span></span>
+      </div>
+
+      <div class="section-title" style="margin-top:14px">State</div>
+      <div class="btnrow">
+        <button id="btnReset" class="ghost">Reset</button>
+        <button id="btnExport" class="ghost">Export JSON</button>
+        <label class="small" style="display:flex; align-items:center; gap:8px">
+          <input type="file" id="fileImport" accept="application/json" />
+          Import JSON
+        </label>
+      </div>
+
+      <div class="section-title" style="margin-top:14px">Event Log</div>
+      <div class="log" id="log"></div>
+    </section>
+
+    <!-- RIGHT: Visualizations & Narrative -->
+    <section class="card">
+      <div class="vizgrid">
+        <div class="canvas-box">
+          <div class="canvas-title">
+            <div class="legend"><strong>Pairs Radar (12)</strong>
+              <span><i class="sw past"></i> T-1</span>
+              <span><i class="sw t0"></i> T0</span>
+              <span><i class="sw t1"></i> T+1</span>
+            </div>
+          </div>
+          <canvas id="pairsRadar" aria-label="Pairs Radar"></canvas>
+        </div>
+
+        <div class="canvas-box">
+          <div class="canvas-title">
+            <div class="legend"><strong>Meta Radar (6)</strong>
+              <span><i class="sw past"></i> T-1</span>
+              <span><i class="sw t0"></i> T0</span>
+              <span><i class="sw t1"></i> T+1</span>
+            </div>
+          </div>
+          <canvas id="metaRadar" aria-label="Meta Radar"></canvas>
+        </div>
+
+        <div class="canvas-box">
+          <div class="canvas-title">
+            <div class="legend"><strong>9×9 Grid — Self-Expression × World-Engagement</strong></div>
+          </div>
+          <canvas id="gridXY" class="mini" aria-label="9x9 Grid"></canvas>
+        </div>
+
+        <div class="canvas-box">
+          <div class="canvas-title"><div class="legend"><strong>Training Grounds Narrative</strong></div></div>
+          <details class="narr" open>
+            <summary>Analysis</summary>
+            <div class="nbody">
+              <div class="nsec">
+                <strong>T0 Narrative</strong>
+                <div id="tgNarrativeT0">—</div>
+              </div>
+              <div class="nsec">
+                <strong>Operator Recommendation</strong>
+                <div id="tgOperatorReason">—</div>
+                <div class="nsec" style="margin-top:8px; background:rgba(34,197,94,0.08); border-left:3px solid var(--good)">
+                  <em id="tgOperatorAction">—</em>
+                </div>
+              </div>
+              <div class="nsec">
+                <strong>Projection (T+1)</strong>
+                <div id="tgProjectionRationale">—</div>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    Built from first principles: 6 meta-dimensions × 12 dyads, S→I→G operator calculus, 9×9 grid dynamics, dual radars.
+  </footer>
+
+<script>
+/* ===========================================================================
+   FOUNDATIONAL ONTOLOGY (comments summarize theory; code uses same names)
+   =========================================================================== */
+const ONTOLOGY = {
+  dimensions: {
+    IDENTITY:   { inner:'instinct', outer:'reason'      },
+    EXPERIENCE: { inner:'seen',     outer:'unseen'      },
+    LANGUAGE:   { inner:'ideas',    outer:'ideology'    },
+    DOMAIN:     { inner:'source',   outer:'resource'    },
+    PURPOSE:    { inner:'heart',    outer:'head'        },
+    ORDER:      { inner:'parts',    outer:'whole'       }
+  }
+};
+
+const TRAINING_GROUNDS = {
+  pairsAxes: ['instinct','reason','seen','unseen','ideas','ideology','source','resource','heart','head','parts','whole'],
+  metaAxes:  ['identity','experience','language','domain','purpose','order'],
+  timeLayers: {
+    'T-1': { pairs:{}, meta:{}, narrative:'—', operator:null, timestamp:null },
+    'T0' : { pairs:{}, meta:{}, narrative:'—', operator:null, timestamp:null },
+    'T+1': { pairs:{}, meta:{}, narrative:'—', operator:null, timestamp:null }
+  },
+  history: [], // last 10 T0 states (for narrative/patterns)
+  dyads: {
+    identity:   { indices:[0,1],   color:'#38bdf8', label:'Identity'   },
+    experience: { indices:[2,3],   color:'#14b8a6', label:'Experience' },
+    language:   { indices:[4,5],   color:'#a855f7', label:'Language'   },
+    domain:     { indices:[6,7],   color:'#f59e0b', label:'Domain'     },
+    purpose:    { indices:[8,9],   color:'#ef4444', label:'Purpose'    },
+    order:      { indices:[10,11], color:'#22c55e', label:'Order'      }
+  },
+  currentOperator: null,
+  operatorReason: '',
+  operatorAction: ''
+};
+
+/* ===========================================================================
+   MEASUREMENT + HELPERS
+   =========================================================================== */
+const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
+const round1 = v => Math.round(v*10)/10;
+
+function computeMetaFromPairs(p){
+  const meta = {
+    identity:   round1((p.instinct + p.reason)/2),
+    experience: round1((p.seen + p.unseen)/2),
+    language:   round1((p.ideas + p.ideology)/2),
+    domain:     round1((p.source + p.resource)/2),
+    purpose:    round1((p.heart + p.head)/2),
+    order:      round1((p.parts + p.whole)/2)
+  };
+  return meta;
+}
+
+function varianceOfObjectVals(obj){
+  const vals = Object.values(obj); if (!vals.length) return 0;
+  const mean = vals.reduce((a,b)=>a+b,0)/vals.length;
+  const v = vals.reduce((s,x)=>s+(x-mean)*(x-mean),0)/vals.length;
+  return v;
+}
+
+/* ===========================================================================
+   OPERATOR INFERENCE & APPLICATION
+   =========================================================================== */
+function inferOperator(pairs, meta){
+  const variance = varianceOfObjectVals(pairs);
+  if (variance > 2.0){
+    return {operator:'shed', reason:`Variance=${variance.toFixed(2)} indicates fragmentation/noise.`, action:'Prune tangents; compress to 2–3 core claims; remove contradictions.', priority:'CRITICAL'};
+  }
+  if (meta.order < 4.0){
+    return {operator:'integrate', reason:`Order=${meta.order.toFixed(1)} is low; parts not cohering.`, action:'Link parts into a single thesis; align heart/head; show how evidence fits.', priority:'HIGH'};
+  }
+  if (meta.purpose < 4.0){
+    return {operator:'ground', reason:`Purpose=${meta.purpose.toFixed(1)} is low; aim unclear.`, action:'State a concrete commitment + next step; anchor talk in practice.', priority:'MEDIUM'};
+  }
+  return {operator:'integrate', reason:`Moderate state; integration improves coherence.`, action:'Synthesize themes and reinforce a central storyline.', priority:'LOW'};
+}
+
+// Mutates a pairs object with an operator effect (mathematical sketch)
+function applyOperatorToPairs(pairs, op){
+  const keys = Object.keys(pairs);
+  if (op === 'shed'){
+    // move each score 10% toward mean
+    const vals = keys.map(k=>pairs[k]); const mean = vals.reduce((a,b)=>a+b,0)/vals.length;
+    for (const k of keys){ pairs[k] = round1(clamp(pairs[k] + 0.10*(mean - pairs[k]), 1, 9)); }
+  } else if (op === 'integrate'){
+    // gently boost whole; nudge parts toward whole
+    pairs.whole = clamp(round1(pairs.whole + 0.8), 1, 9);
+    pairs.parts = clamp(round1((pairs.parts*3 + pairs.whole)/4), 1, 9);
+    // align heart/head slightly
+    const avgHH = (pairs.heart + pairs.head)/2;
+    pairs.heart = clamp(round1((pairs.heart*3 + avgHH)/4), 1, 9);
+    pairs.head  = clamp(round1((pairs.head *3 + avgHH)/4), 1, 9);
+  } else if (op === 'ground'){
+    // raise purpose by boosting heart/head +1 (capped)
+    pairs.heart = clamp(pairs.heart + 1, 1, 9);
+    pairs.head  = clamp(pairs.head  + 1, 1, 9);
+  }
+  return pairs;
+}
+
+/* ===========================================================================
+   TEMPORAL DYNAMICS
+   =========================================================================== */
+function generateProjectionRationale(t1, t0, tPlus){
+  // Summarize main vector(s):
+  const dif = TRAINING_GROUNDS.metaAxes.map(ax=>{
+    const d = round1((tPlus.meta[ax]||0) - (t0.meta[ax]||0));
+    return d ? `${ax}:${d>0?'+':''}${d}` : null;
+  }).filter(Boolean).join(', ');
+  return dif ? `Momentum suggests ${dif}.` : 'Stable trajectory expected.';
+}
+
+function calculateProjectionConfidence(t1, t0){
+  const deltas = TRAINING_GROUNDS.pairsAxes.map(k => (t0.pairs[k]||0) - (t1.pairs[k]||0));
+  const varD = deltas.reduce((s,d)=>s+d*d,0)/deltas.length;
+  return clamp(1 - (varD/10), 0, 1);
+}
+
+function projectNextState(t1, t0){
+  const pairs = {};
+  for (const k of TRAINING_GROUNDS.pairsAxes){
+    const cur = t0.pairs[k] ?? 5;
+    const past= t1.pairs[k] ?? cur;
+    const projected = clamp(round1(cur + 0.5*(cur - past)), 1, 9);
+    pairs[k] = projected;
+  }
+  const meta = computeMetaFromPairs(pairs);
+  const tPlus = {
+    pairs, meta,
+    confidence: calculateProjectionConfidence(t1, t0),
+    rationale: '' // filled below
+  };
+  tPlus.rationale = generateProjectionRationale(t1, t0, tPlus);
+  return tPlus;
+}
+
+function advanceTimeLayers(newT0State){
+  // archive last T0
+  const prevT0 = TRAINING_GROUNDS.timeLayers['T0'];
+  if (prevT0 && Object.keys(prevT0.pairs||{}).length){
+    TRAINING_GROUNDS.history.push({ ...prevT0 });
+    if (TRAINING_GROUNDS.history.length > 10) TRAINING_GROUNDS.history.shift();
+  }
+  // shift
+  TRAINING_GROUNDS.timeLayers['T-1'] = { ...prevT0 };
+  TRAINING_GROUNDS.timeLayers['T0']  = { ...newT0State, timestamp: Date.now() };
+  // project
+  try{
+    const Tm1 = TRAINING_GROUNDS.timeLayers['T-1'];
+    const T0  = TRAINING_GROUNDS.timeLayers['T0'];
+    const proj = projectNextState(Tm1, T0);
+    TRAINING_GROUNDS.timeLayers['T+1'] = { pairs:proj.pairs, meta:proj.meta, narrative:proj.rationale, operator:null, timestamp:null };
+  }catch(e){
+    // fallback: keep previous T+1 if error
+  }
+}
+
+/* ===========================================================================
+   RADAR DRAWING (supports arrays or objects keyed by axis names)
+   =========================================================================== */
+function drawTrainingRadar(canvasId, axes, timeLayers, key, dyads=null) {
+  const el = document.getElementById(canvasId); if (!el) return;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = el.getBoundingClientRect();
+  el.width  = rect.width  * dpr; el.height = rect.height * dpr;
+  const ctx = el.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,rect.width,rect.height);
+
+  const w=rect.width, h=rect.height, cx=w/2, cy=h/2, R=Math.min(w,h)*0.38, n=axes.length;
+
+  // rings
+  ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.lineWidth=1;
+  for(let r=1;r<=3;r++){ ctx.beginPath(); ctx.arc(cx,cy,(R*r)/3,0,Math.PI*2); ctx.stroke(); }
+
+  // spokes
+  for(let i=0;i<n;i++){
+    const ang=(i/n)*Math.PI*2 - Math.PI/2, x2=cx+R*Math.cos(ang), y2=cy+R*Math.sin(ang);
+    ctx.strokeStyle='rgba(255,255,255,0.18)';
+    if (dyads){ for (const d of Object.values(TRAINING_GROUNDS.dyads)){ if (d.indices.includes(i)){ ctx.strokeStyle=d.color; break; } } }
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x2,y2); ctx.stroke();
+    const lx=cx+(R+12)*Math.cos(ang), ly=cy+(R+12)*Math.sin(ang);
+    ctx.fillStyle='#9fb3c8'; ctx.font='11px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(axes[i], lx, ly);
+  }
+
+  const root = getComputedStyle(document.documentElement);
+  const styles = {
+    'T-1': { stroke:'rgba(150,150,150,0.8)', fill:'rgba(150,150,150,0.08)', width:1,  dash:[4,3] },
+    'T0':  { stroke: root.getPropertyValue('--accent').trim() || '#38bdf8',
+             fill:'rgba(56,189,248,0.15)', width:2,  dash:[] },
+    'T+1': { stroke: root.getPropertyValue('--good').trim()   || '#22c55e',
+             fill:'rgba(34,197,94,0.10)', width:1.5, dash:[] }
+  };
+
+  for(const layer of ['T-1','T0','T+1']){
+    const src = timeLayers?.[layer]?.[key]; if (!src) continue;
+    ctx.beginPath();
+    for(let i=0;i<n;i++){
+      const vRaw = Array.isArray(src) ? src[i] : src[axes[i]];
+      const v = clamp(typeof vRaw === 'number' ? vRaw : 5, 1, 9);
+      const r = ((v-1)/8)*R;
+      const ang=(i/n)*Math.PI*2 - Math.PI/2;
+      const x=cx + r*Math.cos(ang), y=cy + r*Math.sin(ang);
+      (i===0? ctx.moveTo(x,y): ctx.lineTo(x,y));
+    }
+    ctx.closePath();
+    const st=styles[layer]; ctx.fillStyle=st.fill; ctx.fill();
+    ctx.setLineDash(st.dash); ctx.lineWidth=st.width; ctx.strokeStyle=st.stroke; ctx.stroke(); ctx.setLineDash([]);
+  }
+}
+
+/* ===========================================================================
+   9×9 GRID GEOMETRY & DRAWING
+   =========================================================================== */
+function gridPosition(meta){
+  const x = (meta.identity + meta.language + meta.purpose)/3;
+  const y = (meta.experience + meta.domain + meta.order)/3;
+  const dist = Math.hypot(x-5,y-5);
+  const ang = Math.atan2(y-5, x-5)*180/Math.PI;
+  return { x: round1(x), y: round1(y), distanceFromCenter: round1(dist), angle: round1(ang),
+    quadrant: (x>=5 && y>=5)?'Q1: High Expr + High Eng'
+            : (x<5 && y>=5)? 'Q2: Low Expr + High Eng'
+            : (x<5 && y<5)?  'Q3: Low Expr + Low Eng'
+                            : 'Q4: High Expr + Low Eng'
+  };
+}
+
+function drawGridXY(){
+  const el = document.getElementById('gridXY'); if (!el) return;
+  const dpr = window.devicePixelRatio||1; const rect = el.getBoundingClientRect();
+  el.width = rect.width*dpr; el.height = rect.height*dpr;
+  const ctx = el.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,rect.width,rect.height);
+
+  const pad=28; const w=rect.width, h=rect.height;
+  const gx=(x)=> pad + (x-1)*( (w-2*pad)/8 );
+  const gy=(y)=> h - ( pad + (y-1)*( (h-2*pad)/8 ) );
+
+  // grid lines
+  ctx.strokeStyle='rgba(255,255,255,.12)'; ctx.lineWidth=1;
+  for(let i=1;i<=9;i++){
+    const X=gx(i), Y=gy(i);
+    ctx.beginPath(); ctx.moveTo(gx(1), Y); ctx.lineTo(gx(9), Y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(X, gy(1)); ctx.lineTo(X, gy(9)); ctx.stroke();
+  }
+  // axes labels
+  ctx.fillStyle='#cfe7ff'; ctx.font='11px system-ui';
+  ctx.fillText('1', gx(1)-6, gy(5)+12); ctx.fillText('5', gx(5)-6, gy(5)+12); ctx.fillText('9', gx(9)-6, gy(5)+12);
+  ctx.save(); ctx.translate(gx(1)-18, gy(9)+6); ctx.rotate(-Math.PI/2);
+  ctx.fillText('World-Engagement (y)', 0,0); ctx.restore();
+  ctx.fillText('Self-Expression (x)', w/2-70, h-6);
+
+  // pull states
+  const Tm1 = TRAINING_GROUNDS.timeLayers['T-1']; const T0 = TRAINING_GROUNDS.timeLayers['T0']; const Tp1 = TRAINING_GROUNDS.timeLayers['T+1'];
+  if (!T0.meta || !Object.keys(T0.meta).length) return;
+
+  const Pm1 = gridPosition(Tm1.meta || T0.meta), P0 = gridPosition(T0.meta), Pp1 = gridPosition(Tp1.meta || T0.meta);
+
+  // vector lines
+  ctx.lineWidth=2;
+  ctx.setLineDash([4,3]); ctx.strokeStyle='rgba(150,150,150,.9)';
+  ctx.beginPath(); ctx.moveTo(gx(Pm1.x), gy(Pm1.y)); ctx.lineTo(gx(P0.x), gy(P0.y)); ctx.stroke();
+  ctx.setLineDash([]); ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#38bdf8';
+  ctx.beginPath(); ctx.moveTo(gx(P0.x), gy(P0.y)); ctx.lineTo(gx(Pp1.x), gy(Pp1.y)); ctx.stroke();
+
+  // points
+  drawMarker(ctx, gx(Pm1.x), gy(Pm1.y), 'circle', 'rgba(150,150,150,.9)');
+  drawMarker(ctx, gx(P0.x),  gy(P0.y),  'square', getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#38bdf8');
+  drawMarker(ctx, gx(Pp1.x), gy(Pp1.y), 'triangle', getComputedStyle(document.documentElement).getPropertyValue('--good').trim()||'#22c55e');
+
+  // quadrant text
+  ctx.fillStyle='#9fb3c8'; ctx.font='12px system-ui';
+  ctx.fillText(P0.quadrant+` • r=${P0.distanceFromCenter}`, gx(1), gy(1)-8);
+}
+
+function drawMarker(ctx,x,y,shape,color){
+  ctx.save(); ctx.translate(x,y); ctx.strokeStyle=color; ctx.fillStyle=color;
+  if (shape==='circle'){ ctx.beginPath(); ctx.arc(0,0,4,0,Math.PI*2); ctx.fill(); }
+  else if (shape==='square'){ ctx.fillRect(-4,-4,8,8); }
+  else if (shape==='triangle'){ ctx.beginPath(); ctx.moveTo(0,-5); ctx.lineTo(5,5); ctx.lineTo(-5,5); ctx.closePath(); ctx.fill(); }
+  ctx.restore();
+}
+
+/* ===========================================================================
+   LOCAL HEURISTIC ANALYZER (text → pairs)
+   =========================================================================== */
+function scoreByKeywords(text, words){
+  let c=0; for (const w of words){ const m = text.match(new RegExp(`\\b${w}\\b`,'gi')); if (m) c += m.length; }
+  return c;
+}
+function scale01ToLikert9(x){ return clamp(Math.round(1 + x*8), 1, 9); }
+
+function analyzeTextLocal(text){
+  const t = (text||'').toLowerCase();
+
+  // Instinct vs Reason
+  const excls = (text.match(/[!]/g)||[]).length;
+  const allcaps = (text.match(/\b[A-Z]{3,}\b/g)||[]).length;
+  const logics = scoreByKeywords(t, ['because','therefore','thus','hence','if','then','therefore','so that','premise','conclude','logic','rational','reason']);
+  const nums = (text.match(/\d+(\.\d+)?/g)||[]).length;
+
+  const sentences = (text.match(/[^.!?]+[.!?]/g)||[text]).map(s=>s.trim()).filter(Boolean);
+  const avgLen = sentences.reduce((a,s)=>a+s.length,0)/(sentences.length||1);
+  const shortness = clamp((100 - Math.min(avgLen, 100))/100, 0, 1);
+
+  const instinct = scale01ToLikert9( clamp( (excls*0.06 + allcaps*0.12 + shortness*0.8), 0, 1) );
+  const reason   = scale01ToLikert9( clamp( (logics*0.09 + nums*0.05 + (1-shortness)*0.4), 0, 1) );
+
+  // Seen vs Unseen
+  const seenK = ['see','saw','evidence','data','measured','observed','table','figure','graph','report','dataset','link','study','percent','%'];
+  const unseenK=['maybe','perhaps','likely','assume','guess','unknown','hidden','unseen','hypothesis','speculate','intangible','behind'];
+  const seen    = scale01ToLikert9( clamp((scoreByKeywords(t,seenK))*0.08, 0, 1) );
+  const unseen  = scale01ToLikert9( clamp((scoreByKeywords(t,unseenK))*0.10, 0, 1) );
+
+  // Ideas vs Ideology
+  const ideasK=['imagine','what if','could','explore','novel','metaphor','prototype','sketch','brainstorm','concept','idea'];
+  const ideologyK=['should','must','ought','principle','policy','doctrine','rule','law','always','never'];
+  const ideas     = scale01ToLikert9( clamp(scoreByKeywords(t,ideasK)*0.10, 0, 1) );
+  const ideology  = scale01ToLikert9( clamp(scoreByKeywords(t,ideologyK)*0.10, 0, 1) );
+
+  // Source vs Resource
+  const sourceK=['potential','opportunity','capability','can','could','option','seed','talent','upside','latent'];
+  const resourceK=['budget','time','timeline','roadmap','tool','tools','process','equipment','cash','inventory','headcount'];
+  const source    = scale01ToLikert9( clamp(scoreByKeywords(t,sourceK)*0.10, 0, 1) );
+  const resource  = scale01ToLikert9( clamp(scoreByKeywords(t,resourceK)*0.10, 0, 1) );
+
+  // Heart vs Head
+  const heartK=['love','care','feel','feels','feeling','fear','worry','worried','excited','anxious','angry','sad','joy','hope','concern','grateful','empathy','empathic','emotion'];
+  const headK =['analyze','analysis','calculate','optimize','plan','strategy','model','framework','metric','kpi','objective','rational','cognitive','structure'];
+  const heart = scale01ToLikert9( clamp(scoreByKeywords(t,heartK)*0.08 + (excls*0.02), 0, 1) );
+  const head  = scale01ToLikert9( clamp(scoreByKeywords(t,headK)*0.09 + (logics*0.03), 0, 1) );
+
+  // Parts vs Whole
+  const listLines = (text.match(/(^|\n)\s*(?:-|\d+\.)\s+/g)||[]).length;
+  const partsK=['component','step','item','detail','specific'];
+  const wholeK=['overall','system','holistic','integrated','coherent','big picture','architecture','gestalt','synthesis','unified'];
+  const parts = scale01ToLikert9( clamp( listLines*0.25 + scoreByKeywords(t,partsK)*0.12, 0, 1) );
+  const whole = scale01ToLikert9( clamp( scoreByKeywords(t,wholeK)*0.12 + (nums>5?0.1:0), 0, 1) );
+
+  const pairs = { instinct, reason, seen, unseen, ideas, ideology, source, resource, heart, head, parts, whole };
+  const meta  = computeMetaFromPairs(pairs);
+
+  const variance = varianceOfObjectVals(pairs);
+  const op = inferOperator(pairs, meta);
+  const narrative = [
+    `Identity tilt: instinct ${instinct}/ reason ${reason} (Δ=${Math.abs(instinct-reason)}).`,
+    `Experience: seen ${seen}/ unseen ${unseen} → boundary ${(meta.experience).toFixed(1)}.`,
+    `Order: parts ${parts}/ whole ${whole} → meta ${meta.order.toFixed(1)}.`,
+    `Variance=${variance.toFixed(2)}; operator → ${op.operator.toUpperCase()}.`
+  ].join(' ');
+
+  return {
+    pairs, meta,
+    narrative,
+    operator:{ recommended:op.operator, reason:op.reason, action:op.action },
+    projection:null // will be filled by advanceTimeLayers()
+  };
+}
+
+/* ===========================================================================
+   OPENAI (optional) — Modeler prompt (client-side; use at your own risk)
+   =========================================================================== */
+const MODELER_PROMPT = (snippet)=>`SYSTEM: You are the Observer in an ethics-first persuasion experiment. You model belief states using the Training Grounds framework.
+
+TASK: Analyze the agent's conversational behavior from the chat snippet and return a structured JSON belief profile.
+
+FRAMEWORK:
+- 12 Pairs (1-9): Instinct↔Reason, Seen↔Unseen, Ideas↔Ideology, Source↔Resource, Heart↔Head, Parts↔Whole
+- 6 Meta: Identity, Experience, Language, Domain, Purpose, Order
+- Operators: Shed (prune), Integrate (connect), Ground (stabilize)
+
+CONTEXT:
+- Recent chat (last 8 messages):
+${snippet}
+
+REQUIRED JSON STRUCTURE:
+{
+  "pairs": {"instinct":1-9,"reason":1-9,"seen":1-9,"unseen":1-9,"ideas":1-9,"ideology":1-9,"source":1-9,"resource":1-9,"heart":1-9,"head":1-9,"parts":1-9,"whole":1-9},
+  "meta": {"identity":#,"experience":#,"language":#,"domain":#,"purpose":#,"order":#},
+  "narrative":"… 2–3 sentences …",
+  "archetypes":["…","…"],
+  "tone":"constructive|skeptical|emphatic|inquisitive|combative",
+  "operator":{"recommended":"shed|integrate|ground","reason":"…","action":"…"},
+  "projection":{"pairs":{…},"meta":{…},"rationale":"…"},
+  "rationale":"…"
+}
+
+RULES:
+1) Pair scores are integers 1–9.
+2) Meta = averages of dyads, rounded to 1 decimal.
+3) Operator: Shed if variance>2.0; Integrate if order<4; Ground if purpose<4 (else Integrate).
+4) No demographic inference; only conversational behavior.
+5) JSON must be valid and complete.`;
+
+async function analyzeWithOpenAI(text){
+  const key = document.getElementById('apiKey').value.trim();
+  const model = document.getElementById('modelName').value.trim() || 'gpt-4o-mini';
+  if (!key) throw new Error('OpenAI key missing.');
+  const prompt = MODELER_PROMPT(text);
+
+  // NOTE: Calling OpenAI from the browser exposes your key; recommended only for local experiments.
+  const resp = await fetch('https://api.openai.com/v1/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
+    body: JSON.stringify({
+      model,
+      messages:[{role:'user', content: prompt}],
+      temperature:0.2
+    })
+  });
+  if (!resp.ok){
+    const t = await resp.text();
+    throw new Error(`OpenAI error ${resp.status}: ${t}`);
+  }
+  const data = await resp.json();
+  const content = data?.choices?.[0]?.message?.content || '';
+  const json = extractJSON(content);
+  if (!json) throw new Error('Could not parse JSON from modeler.');
+  // ensure meta present
+  if (!json.meta || Object.keys(json.meta).length===0){
+    json.meta = computeMetaFromPairs(json.pairs);
+  }
+  // ensure operator
+  if (!json.operator){
+    const op = inferOperator(json.pairs, json.meta);
+    json.operator = {recommended:op.operator, reason:op.reason, action:op.action};
+  }
+  return json;
+}
+
+function extractJSON(s){
+  // Try to extract the largest {...} block
+  const m = s.match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  try{ return JSON.parse(m[0]); }catch{ 
+    // Try to remove code fences & trailing commas
+    try{ return JSON.parse(m[0].replace(/```json|```/g,'').replace(/,(\s*[}\]])/g,'$1')); }catch{ return null; }
+  }
+}
+
+/* ===========================================================================
+   UI WIRING
+   =========================================================================== */
+const logEl = document.getElementById('log');
+function log(kind, msg, extra){
+  const div = document.createElement('div'); div.className='entry';
+  const ts = new Date().toLocaleTimeString();
+  const color = kind==='ERR'?'err':(kind==='OK'?'ok':(kind==='WARN'?'warn':''));
+  div.innerHTML = `<span class="${color}">[${kind}]</span> <span class="muted">${ts}</span> — ${msg}`;
+  if (extra){ div.title = JSON.stringify(extra).slice(0,500); }
+  logEl.appendChild(div); logEl.scrollTop = logEl.scrollHeight;
+}
+
+function redrawAll(){
+  drawTrainingRadar('pairsRadar', TRAINING_GROUNDS.pairsAxes, TRAINING_GROUNDS.timeLayers, 'pairs', TRAINING_GROUNDS.dyads);
+  drawTrainingRadar('metaRadar',  TRAINING_GROUNDS.metaAxes,  TRAINING_GROUNDS.timeLayers, 'meta');
+  drawGridXY();
+  updateNarrativePanel();
+  updateSuggestedOpPill();
+}
+
+function updateNarrativePanel(){
+  const T0 = TRAINING_GROUNDS.timeLayers['T0'];
+  const Tp = TRAINING_GROUNDS.timeLayers['T+1'];
+  document.getElementById('tgNarrativeT0').textContent = T0.narrative || '—';
+  const op = T0.operator;
+  document.getElementById('tgOperatorReason').textContent = op?.reason || '—';
+  document.getElementById('tgOperatorAction').textContent = op?.action || '—';
+  document.getElementById('tgProjectionRationale').textContent = Tp?.narrative || '—';
+}
+
+function updateSuggestedOpPill(){
+  const T0 = TRAINING_GROUNDS.timeLayers['T0'];
+  document.getElementById('suggestedOp').textContent = (T0?.operator?.recommended || '—').toUpperCase();
+  document.querySelectorAll('.ops .op').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.op === (T0?.operator?.recommended || ''));
+  });
+}
+
+function getSeedSample(){
+  return `We should ship the MVP this Friday. Because the data shows 78% of users only need the core.
+- step 1: cut scope to essentials
+- step 2: publish plan
+I'm excited but nervous—let's sequence risks and commit. Overall system must stay coherent; policy-wise we ought to be consistent.`;
+}
+
+/* Initialize baseline layers with 5s */
+function resetState(){
+  const p = {}; const m = {};
+  for (const k of TRAINING_GROUNDS.pairsAxes) p[k]=5;
+  for (const k of TRAINING_GROUNDS.metaAxes)  m[k]=5;
+  TRAINING_GROUNDS.timeLayers['T-1']={pairs:{...p},meta:{...m},narrative:'—',operator:null,timestamp:null};
+  TRAINING_GROUNDS.timeLayers['T0'] ={pairs:{...p},meta:{...m},narrative:'—',operator:{recommended:'integrate',reason:'Baseline state',action:'Synthesize a central storyline.'},timestamp:Date.now()};
+  TRAINING_GROUNDS.timeLayers['T+1']={pairs:{...p},meta:{...m},narrative:'—',operator:null,timestamp:null};
+  TRAINING_GROUNDS.history.length=0;
+  redrawAll();
+}
+
+document.getElementById('btnAnalyzeLocal').addEventListener('click', ()=>{
+  const txt = document.getElementById('inputText').value.trim() || getSeedSample();
+  const tg = analyzeTextLocal(txt);
+  advanceTimeLayers(tg);
+  log('OK','Local analysis complete.', tg.operator);
+  redrawAll();
+});
+
+document.getElementById('btnAnalyzeOpenAI').addEventListener('click', async ()=>{
+  const txt = document.getElementById('inputText').value.trim() || getSeedSample();
+  try{
+    const tg = await analyzeWithOpenAI(txt);
+    advanceTimeLayers(tg);
+    log('OK','OpenAI modeler analysis complete.', tg.operator);
+    redrawAll();
+  }catch(e){
+    log('ERR', e.message || String(e));
+  }
+});
+
+document.getElementById('btnSimDemo').addEventListener('click', ()=>{
+  // small random perturbation around current T0 for demo
+  const T0 = TRAINING_GROUNDS.timeLayers['T0'];
+  const pairs = {...T0.pairs};
+  for (const k of Object.keys(pairs)){ pairs[k] = clamp(round1(pairs[k] + (Math.random()-.5)*1.0), 1, 9); }
+  const meta = computeMetaFromPairs(pairs);
+  const op = inferOperator(pairs, meta);
+  const tg = {
+    pairs, meta,
+    narrative: `Demo perturbation; identity ${(meta.identity).toFixed(1)}, order ${(meta.order).toFixed(1)}.`,
+    operator: {recommended: op.operator, reason: op.reason, action: op.action},
+    projection:null
+  };
+  advanceTimeLayers(tg);
+  log('OK','Simulated update applied.');
+  redrawAll();
+});
+
+document.getElementById('btnApplySuggested').addEventListener('click', ()=>{
+  const T0 = TRAINING_GROUNDS.timeLayers['T0'];
+  const suggested = T0?.operator?.recommended;
+  if (!suggested){ log('WARN','No suggested operator.'); return; }
+  const pairs = applyOperatorToPairs({...T0.pairs}, suggested);
+  const meta  = computeMetaFromPairs(pairs);
+  const op2   = inferOperator(pairs, meta);
+  const tg = {
+    pairs, meta,
+    narrative: `Applied ${suggested.toUpperCase()} to T0; order ${meta.order.toFixed(1)}, purpose ${meta.purpose.toFixed(1)}.`,
+    operator: {recommended: op2.operator, reason: op2.reason, action: op2.action},
+    projection:null
+  };
+  advanceTimeLayers(tg);
+  log('OK',`Applied operator: ${suggested.toUpperCase()}`);
+  redrawAll();
+});
+
+document.querySelectorAll('.ops .op').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const op = btn.dataset.op;
+    const T0 = TRAINING_GROUNDS.timeLayers['T0'];
+    const pairs = applyOperatorToPairs({...T0.pairs}, op);
+    const meta  = computeMetaFromPairs(pairs);
+    const op2   = inferOperator(pairs, meta);
+    const tg = {
+      pairs, meta,
+      narrative: `Manually applied ${op.toUpperCase()}.`,
+      operator: {recommended: op2.operator, reason: op2.reason, action: op2.action},
+      projection:null
+    };
+    advanceTimeLayers(tg);
+    log('OK',`Manual operator: ${op.toUpperCase()}`);
+    redrawAll();
+  });
+});
+
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  resetState(); log('OK','State reset.');
+});
+
+document.getElementById('btnExport').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(TRAINING_GROUNDS, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='training-grounds-oracle.json'; a.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById('fileImport').addEventListener('change', async (e)=>{
+  const f = e.target.files?.[0]; if (!f) return;
+  try{
+    const txt = await f.text();
+    const obj = JSON.parse(txt);
+    // naive validation
+    if (!obj.timeLayers) throw new Error('Invalid file (no timeLayers).');
+    Object.assign(TRAINING_GROUNDS, obj);
+    log('OK','Imported state.');
+    redrawAll();
+  }catch(err){ log('ERR', 'Import failed: '+(err.message||String(err))); }
+});
+
+// Redraw on resize (HiDPI aware)
+window.addEventListener('resize', redrawAll, {passive:true});
+
+// Boot
+resetState();
+document.getElementById('inputText').value = getSeedSample();
+log('OK','Oracle ready. Paste text and click “Analyze”.');
+</script>
+</body>
+</html>
