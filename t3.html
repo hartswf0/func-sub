@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training Grounds – Holographic Time Worm</title>
+<style>
+:root {
+    --bg: #0a0a0a;
+    --surface: rgba(15, 15, 20, 0.7);
+    --text: #e0e0ff;
+    --text-dim: #667;
+    --accent: #00d4ff;
+    --success: #00ff88;
+    --danger: #ff3366;
+    --glow-intensity: 0.5;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: radial-gradient(ellipse at center, #0a0a1a 0%, var(--bg) 100%);
+    color: var(--text);
+    overflow-x: hidden;
+    touch-action: manipulation;
+    height: 100vh;
+}
+
+.container { 
+    width: 100%; 
+    height: 100%; 
+    display: flex; 
+    flex-direction: column; 
+    backdrop-filter: blur(10px);
+}
+
+header {
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    padding: 0.5rem 1rem;
+    z-index: 100;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    font-size: 0.8rem;
+}
+
+.control-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    background: rgba(0,0,0,0.3);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    border: 1px solid rgba(0,212,255,0.1);
+}
+
+button {
+    padding: 0.4rem 0.8rem;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--accent);
+    color: var(--text);
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+}
+
+button:active { transform: scale(0.95); }
+
+input[type="range"] {
+    width: 80px;
+    background: transparent;
+    -webkit-appearance: none;
+    height: 4px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    padding: 0.5rem;
+}
+
+@media (min-width: 1000px) {
+    main { grid-template-columns: 1fr 1fr; }
+}
+
+.radar-container {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 0.5rem;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(0,212,255,0.1);
+}
+
+.radar-title {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+}
+
+svg { 
+    width: 100%; 
+    height: 100%; 
+    display: block;
+}
+
+.status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(0,212,255,0.1);
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Holographic effect layers */
+.holographic-layer {
+    mix-blend-mode: screen;
+    filter: url(#chromatic) url(#bloom);
+}
+</style>
+<base target="_blank">
+</head>
+<body>
+<div class="container">
+    <header>
+        <div class="controls">
+            <button id="playBtn" onclick="togglePlay()">⏸️</button>
+            <div class="control-group">
+                <label>Speed</label>
+                <input type="range" id="speed" min="0.1" max="10" step="0.1" value="1">
+            </div>
+            <div class="control-group">
+                <label>Depth</label>
+                <input type="range" id="depth" min="0.1" max="1" step="0.05" value="0.4">
+            </div>
+            <div class="control-group">
+                <label>Curve</label>
+                <input type="range" id="curve" min="0.1" max="1" step="0.05" value="0.6">
+            </div>
+            <div class="control-group">
+                <label>Time</label>
+                <input type="range" id="timeScrub" min="0" max="4320" value="0">
+                <span id="timeDisplay">0h</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="radar-container">
+            <svg id="pairs-worm" viewBox="0 0 400 400">
+                <defs>
+                    <filter id="bloom">
+                        <feGaussianBlur stdDeviation="4" result="blur"/>
+                        <feMerge>
+                            <feMergeNode in="blur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                    <filter id="chromatic">
+                        <feOffset in="SourceGraphic" dx="1" dy="0" result="red"/>
+                        <feOffset in="SourceGraphic" dx="-1" dy="0" result="cyan"/>
+                        <feMerge>
+                            <feMergeNode in="red"/>
+                            <feMergeNode in="cyan"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+            </svg>
+        </div>
+        <div class="radar-container">
+            <svg id="meta-worm" viewBox="0 0 400 400">
+                <defs>
+                    <filter id="bloom2">
+                        <feGaussianBlur stdDeviation="3" result="blur"/>
+                        <feMerge>
+                            <feMergeNode in="blur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+            </svg>
+        </div>
+    </main>
+
+    <div class="status-bar">
+        <span><span id="stageIndicator">INTEGRATE</span> STAGE</span>
+        <span><span id="hourCounter">0</span>/4320 HOURS</span>
+        <span>FPS: <span id="fps">60</span></span>
+    </div>
+</div>
+
+<script>
+const CONFIG = {
+    center: 200,
+    radius: 160,
+    levels: 9,
+    maxValue: 9,
+    bufferSize: 120, // 5 days visible at once
+    speed: 1,
+    depthOpacity: 0.4,
+    curveTension: 0.6,
+    isPlaying: true
+};
+
+class SixMonthStream {
+    constructor() {
+        this.hour = 0;
+        this.maxHours = 24 * 30 * 6; // 6 months
+        this.buffer = {
+            pairs: { T_1: [], T0: [], T_P1: [] },
+            meta: { T_1: [], T0: [], T_P1: [] }
+        };
+        this.seeds = {
+            pairs: [4,5,6,7,8,9,5,6,7,8,9,9],
+            meta: [5,6,7,8,9,9]
+        };
+        this.cycles = {
+            hourly: 1/24,
+            daily: 1/168,
+            weekly: 1/720,
+            monthly: 1/4320
+        };
+        this.init();
+    }
+
+    init() {
+        // Pre-generate 6 months of data
+        for (let h = 0; h < this.maxHours; h++) {
+            this.generateForHour(h);
+        }
+        // Fill initial buffer
+        this.updateBuffer(0);
+    }
+
+    generateForHour(hour) {
+        const time = hour / this.maxHours;
+        const dailyCycle = Math.sin(time * Math.PI * 2 / 24) * 0.5;
+        const weeklyCycle = Math.sin(time * Math.PI * 2 / 168) * 0.3;
+        const monthlyCycle = Math.sin(time * Math.PI * 2 / 720) * 0.4;
+        
+        const drift = (Math.sin(hour * 0.01) + Math.cos(hour * 0.007)) * 0.2;
+        
+        const smoothNoise = (seed) => {
+            const t = hour * 0.1 + seed;
+            return (Math.sin(t) + Math.sin(t * 1.5) + Math.sin(t * 2.3)) / 3;
+        };
+
+        // Generate correlated triplets across time
+        const basePairs = this.seeds.pairs.map((base, i) => {
+            const noise = smoothNoise(i) * 0.5 + drift;
+            return Math.max(1, Math.min(9, base + dailyCycle + weeklyCycle + monthlyCycle + noise));
+        });
+
+        const baseMeta = this.seeds.meta.map((base, i) => {
+            const noise = smoothNoise(i + 100) * 0.3 + drift * 0.7;
+            return Math.max(1, Math.min(9, base + monthlyCycle + weeklyCycle * 0.5 + noise));
+        });
+
+        return {
+            T_1: basePairs.map((v, i) => Math.max(1, Math.min(9, v - 0.5 + smoothNoise(i + 200) * 0.3))),
+            T0: basePairs,
+            T_P1: basePairs.map((v, i) => Math.max(1, Math.min(9, v + 0.3 + smoothNoise(i + 300) * 0.2)))
+        };
+    }
+
+    updateBuffer(currentHour) {
+        const start = Math.max(0, currentHour - CONFIG.bufferSize);
+        const end = Math.min(this.maxHours, currentHour + 5);
+        
+        this.buffer.pairs = { T_1: [], T0: [], T_P1: [] };
+        this.buffer.meta = { T_1: [], T0: [], T_P1: [] };
+        
+        for (let h = start; h < end; h++) {
+            const data = this.generateForHour(h);
+            this.buffer.pairs.T_1.push(data.T_1);
+            this.buffer.pairs.T0.push(data.T0);
+            this.buffer.pairs.T_P1.push(data.T_P1);
+            
+            // Meta derived from pairs averages
+            this.buffer.meta.T_1.push([
+                (data.T_1[0] + data.T_1[1]) / 2, // Identity
+                (data.T_1[2] + data.T_1[3]) / 2, // Experience
+                (data.T_1[4] + data.T_1[5]) / 2, // Language
+                (data.T_1[6] + data.T_1[7]) / 2, // Domain
+                (data.T_1[8] + data.T_1[9]) / 2, // Purpose
+                (data.T_1[10] + data.T_1[11]) / 2 // Order
+            ]);
+            this.buffer.meta.T0.push([
+                (data.T0[0] + data.T0[1]) / 2,
+                (data.T0[2] + data.T0[3]) / 2,
+                (data.T0[4] + data.T0[5]) / 2,
+                (data.T0[6] + data.T0[7]) / 2,
+                (data.T0[8] + data.T0[9]) / 2,
+                (data.T0[10] + data.T0[11]) / 2
+            ]);
+            this.buffer.meta.T_P1.push([
+                (data.T_P1[0] + data.T_P1[1]) / 2,
+                (data.T_P1[2] + data.T_P1[3]) / 2,
+                (data.T_P1[4] + data.T_P1[5]) / 2,
+                (data.T_P1[6] + data.T_P1[7]) / 2,
+                (data.T_P1[8] + data.T_P1[9]) / 2,
+                (data.T_P1[10] + data.T_P1[11]) / 2
+            ]);
+        }
+    }
+}
+
+const stream = new SixMonthStream();
+
+function createOrganicPath(data, tension = 0.6) {
+    const angleStep = (Math.PI * 2) / data.length;
+    const points = data.map((value, i) => {
+        const angle = angleStep * i - Math.PI / 2;
+        const r = (value / CONFIG.maxValue) * CONFIG.radius;
+        return {
+            x: CONFIG.center + Math.cos(angle) * r,
+            y: CONFIG.center + Math.sin(angle) * r,
+            angle
+        };
+    });
+
+    // Cubic Bezier spline with tension
+    let path = `M ${points[0].x},${points[0].y}`;
+    for (let i = 0; i < points.length; i++) {
+        const p0 = points[(i - 1 + points.length) % points.length];
+        const p1 = points[i];
+        const p2 = points[(i + 1) % points.length];
+        const p3 = points[(i + 2) % points.length];
+
+        const cp1x = p1.x + (p2.x - p0.x) * tension / 6;
+        const cp1y = p1.y + (p2.y - p0.y) * tension / 6;
+        const cp2x = p2.x - (p3.x - p1.x) * tension / 6;
+        const cp2y = p2.y - (p3.y - p1.y) * tension / 6;
+
+        path += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+    }
+    path += ' Z';
+    return path;
+}
+
+function drawHolographicWorm(svgId, type) {
+    const svg = document.getElementById(svgId);
+    const buffer = stream.buffer[type];
+    const sliceCount = buffer.T0.length;
+    
+    // Clear and keep defs
+    const defs = svg.querySelector('defs');
+    svg.innerHTML = '';
+    svg.appendChild(defs);
+
+    // Draw layers from back to front
+    for (let i = 0; i < sliceCount; i++) {
+        const depth = i / sliceCount;
+        const opacity = depth * CONFIG.depthOpacity;
+        const blur = (1 - depth) * 3;
+        
+        // Create layer group
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', 'holographic-layer');
+        g.style.opacity = opacity;
+        
+        // Filter for this layer
+        const filterId = `filter-${i}`;
+        const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+        filter.setAttribute('id', filterId);
+        const blurElem = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
+        blurElem.setAttribute('stdDeviation', blur);
+        filter.appendChild(blurElem);
+        defs.appendChild(filter);
+        g.setAttribute('filter', `url(#${filterId})`);
+
+        // Draw three time-phase paths for this slice
+        ['T_1', 'T0', 'T_P1'].forEach((phase, idx) => {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const data = buffer[phase][i];
+            path.setAttribute('d', createOrganicPath(data, CONFIG.curveTension));
+            
+            if (phase === 'T_1') {
+                path.setAttribute('stroke', `rgba(100, 100, 150, ${opacity * 0.6})`);
+                path.setAttribute('stroke-width', '0.5');
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke-dasharray', '2,4');
+            } else if (phase === 'T0') {
+                path.setAttribute('stroke', `rgba(0, 212, 255, ${opacity + 0.2})`);
+                path.setAttribute('stroke-width', Math.max(0.5, opacity * 3));
+                path.setAttribute('fill', `rgba(0, 212, 255, ${opacity * 0.1})`);
+            } else {
+                path.setAttribute('stroke', `rgba(0, 255, 136, ${opacity * 0.8})`);
+                path.setAttribute('stroke-width', '0.8');
+                path.setAttribute('fill', 'none');
+            }
+            
+            g.appendChild(path);
+        });
+
+        svg.appendChild(g);
+    }
+
+    // Present moment highlight
+    const present = buffer.T0[sliceCount - 1];
+    const presentPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    presentPath.setAttribute('d', createOrganicPath(present, CONFIG.curveTension));
+    presentPath.setAttribute('stroke', '#00d4ff');
+    presentPath.setAttribute('stroke-width', '3');
+    presentPath.setAttribute('fill', 'rgba(0, 212, 255, 0.2)');
+    presentPath.setAttribute('filter', 'url(#chromatic)');
+    svg.appendChild(presentPath);
+}
+
+// Animation
+let currentHour = 0;
+let isPlaying = true;
+let speed = 1;
+let lastFrame = 0;
+let fps = 0;
+let frameCount = 0;
+
+function animate(timestamp) {
+    if (!isPlaying) {
+        requestAnimationFrame(animate);
+        return;
+    }
+
+    const elapsed = timestamp - lastFrame;
+    if (elapsed > 1000 / (60 * speed)) {
+        currentHour = (currentHour + 1) % stream.maxHours;
+        stream.updateBuffer(currentHour);
+        
+        drawHolographicWorm('pairs-worm', 'pairs');
+        drawHolographicWorm('meta-worm', 'meta');
+        
+        // Update UI
+        document.getElementById('hourCounter').textContent = currentHour;
+        document.getElementById('timeDisplay').textContent = `${Math.floor(currentHour / 24)}d ${currentHour % 24}h`;
+        
+        // FPS
+        frameCount++;
+        if (timestamp - lastFrame > 1000) {
+            fps = frameCount;
+            frameCount = 0;
+            lastFrame = timestamp;
+        }
+        document.getElementById('fps').textContent = fps;
+    }
+    
+    requestAnimationFrame(animate);
+}
+
+// Controls
+function togglePlay() {
+    isPlaying = !isPlaying;
+    document.getElementById('playBtn').textContent = isPlaying ? '⏸️' : '▶️';
+}
+
+function updateSpeed(val) {
+    speed = parseFloat(val);
+    document.querySelector('#speed + span').textContent = val + 'x';
+}
+
+function updateDepth(val) {
+    CONFIG.depthOpacity = parseFloat(val);
+    document.querySelector('#depth + span').textContent = val;
+}
+
+function updateCurve(val) {
+    CONFIG.curveTension = parseFloat(val);
+    document.querySelector('#curve + span').textContent = val;
+}
+
+function updateTimeScrub(val) {
+    currentHour = parseInt(val);
+    stream.updateBuffer(currentHour);
+}
+
+// Initialize
+document.getElementById('speed').addEventListener('input', (e) => updateSpeed(e.target.value));
+document.getElementById('depth').addEventListener('input', (e) => updateDepth(e.target.value));
+document.getElementById('curve').addEventListener('input', (e) => updateCurve(e.target.value));
+document.getElementById('timeScrub').addEventListener('input', (e) => updateTimeScrub(e.target.value));
+
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
