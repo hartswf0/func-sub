@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training Grounds – Dual Radar</title>
+<style>
+:root {
+    --bg: #0a0a0a;
+    --surface: #1a1a1a;
+    --text: #f0f0f0;
+    --text-dim: #888;
+    --axis-I: #4a90e2;
+    --axis-E: #50e3c2;
+    --axis-L: #9013fe;
+    --axis-D: #f5a623;
+    --axis-P: #d0021b;
+    --axis-O: #7ed321;
+    --t1: #666;
+    --t0: #00d4ff;
+    --tp1: #00ff88;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 1rem;
+    line-height: 1.4;
+}
+
+.container { max-width: 1400px; margin: 0 auto; }
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--surface);
+}
+
+h1 { font-size: clamp(1.2rem, 4vw, 1.8rem); letter-spacing: 0.1em; }
+
+.time-controls { display: flex; gap: 0.5rem; }
+
+.phase-btn {
+    padding: 0.5rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--text-dim);
+    color: var(--text);
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.phase-btn.active { border-color: var(--t0); box-shadow: 0 0 8px var(--t0); }
+
+main { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+
+@media (min-width: 1000px) {
+    main { grid-template-columns: 1fr 1fr; }
+}
+
+.radar-container {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 1rem;
+    position: relative;
+}
+
+.radar-title {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.1em;
+}
+
+svg { width: 100%; height: auto; }
+
+.legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.legend-line {
+    width: 20px;
+    height: 3px;
+    border-radius: 2px;
+}
+
+.operator-bar {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    padding: 1rem;
+    background: var(--surface);
+    border-radius: 8px;
+    margin: 1.5rem 0;
+}
+
+.operator-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.8rem 1.5rem;
+    background: var(--bg);
+    border: 2px solid var(--text-dim);
+    color: var(--text);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.operator-btn.active { border-color: var(--t0); transform: translateY(-2px); }
+
+.operator-icon { font-size: 1.5rem; }
+
+.data-input {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1.5rem;
+}
+
+textarea {
+    width: 100%;
+    min-height: 120px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--text-dim);
+    border-radius: 4px;
+    padding: 0.5rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+}
+
+.update-btn {
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--t0);
+    color: var(--bg);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.axis-pairs { display: none; }
+</style>
+<base target="_blank">
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>TRAINING GROUNDS</h1>
+        <div class="time-controls">
+            <button class="phase-btn" onclick="setPhase('T-1')">T-1</button>
+            <button class="phase-btn active" onclick="setPhase('T0')">T0</button>
+            <button class="phase-btn" onclick="setPhase('T+1')">T+1</button>
+        </div>
+    </header>
+
+    <div class="operator-bar">
+        <button class="operator-btn active" onclick="setStage('SHED')">
+            <span class="operator-icon">✂️</span>
+            <span>SHED</span>
+        </button>
+        <button class="operator-btn" onclick="setStage('INTEGRATE')">
+            <span class="operator-icon">🔗</span>
+            <span>INTEGRATE</span>
+        </button>
+        <button class="operator-btn" onclick="setStage('GROUND')">
+            <span class="operator-icon">⚓</span>
+            <span>GROUND</span>
+        </button>
+    </div>
+
+    <main>
+        <div class="radar-container">
+            <div class="radar-title">12-AXIS PAIRS RADAR</div>
+            <svg id="pairs-radar" viewBox="0 0 400 400"></svg>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-line" style="background: var(--t1); border: 1px dashed var(--t1);"></div>
+                    <span>T-1</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line" style="background: var(--t0);"></div>
+                    <span>T0</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line" style="background: transparent; border: 2px solid var(--tp1);"></div>
+                    <span>T+1</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="radar-container">
+            <div class="radar-title">6-AXIS META RADAR</div>
+            <svg id="meta-radar" viewBox="0 0 400 400"></svg>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-line" style="background: var(--axis-I);"></div>
+                    <span>Identity</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line" style="background: var(--axis-E);"></div>
+                    <span>Experience</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line" style="background: var(--axis-L);"></div>
+                    <span>Language</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line" style="background: var(--axis-D);"></div>
+                    <span>Domain</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line" style="background: var(--axis-P);"></div>
+                    <span>Purpose</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line" style="background: var(--axis-O);"></div>
+                    <span>Order</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="data-input">
+        <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem;">Paste Data (JSON):</h3>
+        <textarea id="data-input" placeholder='{
+  "pairs": {
+    "T-1": [3,4,5,6,7,8,4,5,6,7,8,9],
+    "T0": [4,5,6,7,8,9,5,6,7,8,9,9],
+    "T+1": [5,6,7,8,9,9,6,7,8,9,9,8]
+  },
+  "meta": {
+    "T-1": [4,5,6,7,8,9],
+    "T0": [5,6,7,8,9,9],
+    "T+1": [6,7,8,9,9,8]
+  }
+}'></textarea>
+        <button class="update-btn" onclick="updateData()">Update Charts</button>
+    </div>
+</div>
+
+<script>
+const CONFIG = {
+    center: 200,
+    radius: 160,
+    levels: 3,
+    maxValue: 9
+};
+
+let state = {
+    stage: 'INTEGRATE',
+    phase: 'T0',
+    data: {
+        pairs: {
+            axes: ['Instinct','Reason','Seen','Unseen','Ideas','Ideology','Source','Resource','Heart','Head','Parts','Whole'],
+            T_1: [3,4,5,6,7,8,4,5,6,7,8,9],
+            T0: [4,5,6,7,8,9,5,6,7,8,9,9],
+            T_P1: [5,6,7,8,9,9,6,7,8,9,9,8]
+        },
+        meta: {
+            axes: ['Identity','Experience','Language','Domain','Purpose','Order'],
+            T_1: [4,5,6,7,8,9],
+            T0: [5,6,7,8,9,9],
+            T_P1: [6,7,8,9,9,8]
+        }
+    }
+};
+
+function drawRadar(svgId, type) {
+    const svg = document.getElementById(svgId);
+    svg.innerHTML = '';
+    const data = state.data[type];
+    const angleStep = (Math.PI * 2) / data.axes.length;
+
+    // Grid circles
+    for (let i = 1; i <= CONFIG.levels; i++) {
+        const r = (CONFIG.radius / CONFIG.levels) * i;
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', CONFIG.center);
+        circle.setAttribute('cy', CONFIG.center);
+        circle.setAttribute('r', r);
+        circle.setAttribute('fill', 'none');
+        circle.setAttribute('stroke', '#333');
+        circle.setAttribute('stroke-width', '0.5');
+        svg.appendChild(circle);
+
+        // Labels
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', CONFIG.center + 5);
+        text.setAttribute('y', CONFIG.center - r + 5);
+        text.setAttribute('fill', '#888');
+        text.setAttribute('font-size', '10');
+        text.textContent = (CONFIG.maxValue / CONFIG.levels * i).toFixed(0);
+        svg.appendChild(text);
+    }
+
+    // Axes and labels
+    data.axes.forEach((axis, i) => {
+        const angle = angleStep * i - Math.PI / 2;
+        const x = CONFIG.center + Math.cos(angle) * CONFIG.radius;
+        const y = CONFIG.center + Math.sin(angle) * CONFIG.radius;
+
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', CONFIG.center);
+        line.setAttribute('y1', CONFIG.center);
+        line.setAttribute('x2', x);
+        line.setAttribute('y2', y);
+        line.setAttribute('stroke', '#444');
+        line.setAttribute('stroke-width', '0.5');
+        svg.appendChild(line);
+
+        const labelX = CONFIG.center + Math.cos(angle) * (CONFIG.radius + 20);
+        const labelY = CONFIG.center + Math.sin(angle) * (CONFIG.radius + 20);
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', labelX);
+        text.setAttribute('y', labelY);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'middle');
+        text.setAttribute('fill', '#ccc');
+        text.setAttribute('font-size', '11');
+        text.setAttribute('font-weight', 'bold');
+        text.textContent = axis.toUpperCase();
+        svg.appendChild(text);
+    });
+
+    // Draw polygons for each time layer
+    ['T_1', 'T0', 'T_P1'].forEach((key, idx) => {
+        const points = data[key].map((value, i) => {
+            const angle = angleStep * i - Math.PI / 2;
+            const r = (value / CONFIG.maxValue) * CONFIG.radius;
+            const x = CONFIG.center + Math.cos(angle) * r;
+            const y = CONFIG.center + Math.sin(angle) * r;
+            return `${x},${y}`;
+        }).join(' ');
+
+        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        polygon.setAttribute('points', points);
+        
+        if (idx === 0) {
+            polygon.setAttribute('fill', 'none');
+            polygon.setAttribute('stroke', '#666');
+            polygon.setAttribute('stroke-width', '1.5');
+            polygon.setAttribute('stroke-dasharray', '4,4');
+        } else if (idx === 1) {
+            polygon.setAttribute('fill', 'rgba(0, 212, 255, 0.15)');
+            polygon.setAttribute('stroke', '#00d4ff');
+            polygon.setAttribute('stroke-width', '2.5');
+        } else {
+            polygon.setAttribute('fill', 'none');
+            polygon.setAttribute('stroke', '#00ff88');
+            polygon.setAttribute('stroke-width', '2');
+            polygon.setAttribute('stroke-opacity', '0.7');
+        }
+        
+        svg.appendChild(polygon);
+    });
+
+    // Highlight current phase
+    if (state.phase !== 'T0') {
+        const phaseData = state.phase === 'T-1' ? data.T_1 : data.T_P1;
+        const points = phaseData.map((value, i) => {
+            const angle = angleStep * i - Math.PI / 2;
+            const r = (value / CONFIG.maxValue) * CONFIG.radius;
+            const x = CONFIG.center + Math.cos(angle) * r;
+            const y = CONFIG.center + Math.sin(angle) * r;
+            return `${x},${y}`;
+        }).join(' ');
+
+        const highlight = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        highlight.setAttribute('points', points);
+        highlight.setAttribute('fill', 'none');
+        highlight.setAttribute('stroke', state.phase === 'T-1' ? '#666' : '#00ff88');
+        highlight.setAttribute('stroke-width', '3');
+        highlight.setAttribute('filter', 'url(#glow)');
+        svg.appendChild(highlight);
+    }
+}
+
+function setStage(stage) {
+    state.stage = stage;
+    document.querySelectorAll('.operator-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.includes(stage));
+    });
+    drawAll();
+}
+
+function setPhase(phase) {
+    state.phase = phase;
+    document.querySelectorAll('.phase-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent === phase);
+    });
+    drawAll();
+}
+
+function drawAll() {
+    drawRadar('pairs-radar', 'pairs');
+    drawRadar('meta-radar', 'meta');
+}
+
+function updateData() {
+    try {
+        const input = JSON.parse(document.getElementById('data-input').value);
+        state.data.pairs = { ...state.data.pairs, ...input.pairs };
+        state.data.meta = { ...state.data.meta, ...input.meta };
+        drawAll();
+    } catch (e) {
+        alert('Invalid JSON format');
+    }
+}
+
+// Initialize
+drawAll();
+</script>
+</body>
+</html>
